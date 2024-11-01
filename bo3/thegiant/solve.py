@@ -1,5 +1,5 @@
 
-with open("../ciphers/cipher.bin", "rb") as f:
+with open("cipher.bin", "rb") as f:
     b = f.read()
 
 print(bytes(b).hex())
