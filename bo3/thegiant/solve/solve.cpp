@@ -42,27 +42,17 @@ constexpr static void apply_xor(unsigned char* cipher, const std::size_t size, c
 }
 
 // constexpr static const auto cipher = "OkEeZHnifuMdYB1IbHyAfb0g2FJzrVmfkKcSbKrpQGvhQ0/bvu76RdnGy/WtT7T3"sv;
-// constexpr const auto cipher = "kCmlgFi6GuJNgkNI1Q41fbfyLoCFTCvlqkZiI0KIAXAzP1U1uy1BE4U"
-// "fPBfpKmmLObjYnQNRBaPtKiVWzc5A4v0w3xIe8FOhAGJZ7g4in0wn"
-// "dJxMOvO3dc1M82at2T6935roTqyWDgtGD/hwwRF3oHqFM5Vcw1"
-// "JtINbsgWRm4o4/quEDkZ7x1B275bX3/Fo1"sv;
+constexpr const auto cipher = "kCmlgFi6GuJNgkNI1Q41fbfyLoCFTCvlqkZiI0KIAXAzP1U1uy1BE4U"
+"fPBfpKmmLObjYnQNRBaPtKiVWzc5A4v0w3xIe8FOhAGJZ7g4in0wn"
+"dJxMOvO3dc1M82at2T6935roTqyWDgtGD/hwwRF3oHqFM5Vcw1"
+"JtINbsgWRm4o4/quEDkZ7x1B275bX3/Fo1"sv;
 
 constexpr static const auto alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"sv;
 constexpr static const auto key_alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"sv;
 // constexpr const char alphabet = "/+9876543210zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA"sv;
 
 // constexpr const std::string_view key = "VGhlR2lhbnRUaGVHaWFudFRoZUdpYW50"sv; // TheGiantTheGiantTheGiant
-// constexpr const std::string_view key = "VGhlR2lhbnRUaGVHaWFudFRoZUdpYW50VGhlR2lhbnRUaGVHaWFudFRoZUdpYW50"sv; // TheGiantTheGiantTheGiantTheGiantTheGiantTheGiant
-// constexpr const std::string_view key = "VEhFR0lBTlRUSEVHSUFOVFRIRUdJQU5UVEhFR0lBTlRUSEVHSUFOVFRIRUdJQU5U"sv; // THEGIANTTHEGIANTTHEGIANTTHEGIANTTHEGIANTTHEGIANT
-// constexpr const std::string_view key = "THEGIANT"sv;
-// constexpr const std::string_view key = "TheGiant"sv;
-// constexpr const std::string_view key = "DerRiese"sv;
-// constexpr const std::string_view key = "RGVyUmllc2VEZXJSaWVzZURlclJpZXNlRGVyUmllc2VEZXJSaWVzZURlclJpZXNl"sv;
-// constexpr const std::string_view key = "05WYpdUZoRFduFWaHVGaURnbhl2RlhGV05WYpdUZoRFduFWaHVGaURnbhl2RlhGV"sv;
-// constexpr const std::string_view key = "U5UQJdURIRFVOFUSHVESURlTBl0RFhEVU5UQJdURIRFVOFUSHVESURlTBl0RFhEV"sv;
-// constexpr const std::string_view key = "DRMAXIS"sv;
-// constexpr const std::string_view key = "RFJFRlBOU1dCQ09C"sv;
-// constexpr const std::string_view key = "A"sv;
+constexpr const std::string_view key = "TheGiant"sv;
 
 // constexpr const std::string_view xor_key = "TheGiant"sv;
 // constexpr const std::string_view xor_key = "THEGIANT"sv;
@@ -70,14 +60,14 @@ constexpr static const auto key_alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"sv;
 constexpr static const auto ALPHABET_LENGTH = alphabet.length();
 constexpr static const auto KEY_ALPHABET_LENGTH = key_alphabet.length();
 constexpr static const auto CIPHER_LENGTH = cipher.length();
-// constexpr static const auto KEY_LENGTH = key.length();
+constexpr static const auto KEY_LENGTH = key.length();
 // constexpr static const auto XOR_KEY_LENGTH = xor_key.length();
 constexpr static const auto DECIPHER_LENGTH = CIPHER_LENGTH * 3 / 4;
 
 constexpr static unsigned char value(unsigned char* arr, unsigned char x) { return arr[x]; };
 constexpr static unsigned char value(unsigned char* arr, char x) { return arr[static_cast<unsigned char>(x)]; };
 
-void test_key(unsigned char* key, const std::size_t KEY_LENGTH)
+void test_key(unsigned char* _key, const std::size_t _KEY_LENGTH)
 {
     unsigned char decipher[DECIPHER_LENGTH]{ 0 };
 
@@ -85,7 +75,7 @@ void test_key(unsigned char* key, const std::size_t KEY_LENGTH)
     char vigenere_cipher[CIPHER_LENGTH]{ 0 };
     char vigenere[ALPHABET_LENGTH][ALPHABET_LENGTH]{{ 0 }};
 
-    for(auto k = 0u; k < 1; k++) {
+    for(auto k = 0u; k < ALPHABET_LENGTH; k++) {
         // Create new alphabet (rotate)
         for(auto i = 0u; i < ALPHABET_LENGTH; i++)
             new_alphabet[(i + k) % ALPHABET_LENGTH] = alphabet[i];
@@ -114,17 +104,19 @@ void test_key(unsigned char* key, const std::size_t KEY_LENGTH)
 
         bool printable{ true };
         for(auto i = 0u; i < DECIPHER_LENGTH; i++) {
-            printable = std::isprint(decipher[i]) && printable;
-            if (!printable)
-                break;
+            std::print("{:02x}", decipher[i]);
+            // printable = std::isprint(decipher[i]) && printable;
+            // if (!printable)
+            //     break;
         }
+        std::println();
 
         // const auto entropy = calculate_entropy(decipher, DECIPHER_LENGTH);
         // if (printable || entropy < 5.5f) {
         //     std::println("entropy: {}", entropy);
-        if (printable) {
-            std::println("START: {}", std::string_view{ reinterpret_cast<const char*>(decipher), DECIPHER_LENGTH });
-        }
+        // if (printable) {
+        //     std::println("{}", std::string_view{ reinterpret_cast<const char*>(decipher), DECIPHER_LENGTH });
+        // }
     }
 }
 
@@ -140,14 +132,17 @@ void make_key(char* key, size_t current_index, size_t size)
 
 int main()
 {
-    char key[13]{ 0 };
-    for(auto i = 0u; i < sizeof(key); i++)
-        key[i] = key_alphabet[0];
+    // char key[13]{ 0 };
+    // for(auto i = 0u; i < sizeof(key); i++)
+    //     key[i] = key_alphabet[0];
 
-    for(auto i = 1u; i < 13; i++)
-    {
-        std::println("Key length: {}", i);
-        make_key(key, 0, i);
-    }
+    // for(auto i = 1u; i < 13; i++)
+    // {
+    //     std::println("Key length: {}", i);
+    //     make_key(key, 0, i);
+    // }
+    //
+    
+    test_key(nullptr, 0);
 }
 
