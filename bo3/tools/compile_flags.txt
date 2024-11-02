@@ -6,3 +6,4 @@
 -Wconversion
 -Wno-unused-variable
 -Wno-unused-function
+-I.
