@@ -10,15 +10,16 @@ namespace cipher::base64
 constexpr static const auto DEFAULT_ALPHABET = alphabet::create("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
 constexpr static const auto DEFAULT_ASCII_TO_VALUE_ARRAY = alphabet::create_ascii_to_index_array(DEFAULT_ALPHABET);
 
-template<std::size_t ENCODED_LENGTH, std::size_t ALPHABET_LENGTH = DEFAULT_ALPHABET.size(), typename charT, typename charT2>
+template<std::size_t ALPHABET_LENGTH = DEFAULT_ALPHABET.size(), typename charT, typename charT2, std::size_t ex1, std::size_t ex2>
 constexpr static void decode(
-    const std::span<charT, ENCODED_LENGTH * 3 / 4> decipher,
-    const std::span<charT2, ENCODED_LENGTH> cipher,
-    const alphabet::Alphabet<ALPHABET_LENGTH>& = DEFAULT_ALPHABET,
-    const alphabet::AsciiToIndexArray<ALPHABET_LENGTH>& ascii_to_value = DEFAULT_ASCII_TO_VALUE_ARRAY) requires(ENCODED_LENGTH % 4 == 0)
+    const std::span<charT, ex1> decipher,
+    const std::span<charT2, ex2> cipher,
+    const alphabet::alphabet_t<ALPHABET_LENGTH>& = DEFAULT_ALPHABET,
+    const alphabet::ascii_to_index_t<ALPHABET_LENGTH>& ascii_to_value = DEFAULT_ASCII_TO_VALUE_ARRAY)
 {
-
-    for(auto i = 0u; i < ENCODED_LENGTH / 4; i++) {
+    static_assert(cipher.size() % 4 == 0);
+    static_assert(decipher.size() >= (cipher.size() * 3 / 4));
+    for(auto i = 0u; i < cipher.size() / 4; i++) {
         const auto pos_of_char_1 = ascii_to_value[cipher[i*4 + 1]];
         decipher[i*3] = static_cast<std::uint8_t>((ascii_to_value[cipher[i*4]] << 2) + ((pos_of_char_1 & 0x30) >> 4));
         const auto pos_of_char_2 = ascii_to_value[cipher[i*4 + 2]];

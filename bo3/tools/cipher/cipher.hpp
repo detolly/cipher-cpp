@@ -20,6 +20,12 @@ constexpr static buffer_t<BUFFER_LEN> buffer(const char (&plaintext)[STRING_LEN]
     return arr;
 }
 
+template<std::size_t len> 
+constexpr static buffer_t<len> empty_buffer()
+{
+    return buffer_t<len>{ 0 };
+}
+
 // template<std::size_t size>
 // constexpr static buffer_t<size> buffer()
 // {
