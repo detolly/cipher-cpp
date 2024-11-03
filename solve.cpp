@@ -37,7 +37,7 @@ constexpr static auto create_ascii_to_indexes(const auto& alphabets)
 
 constexpr static auto create_decoding_tables(const auto& alphabets, const auto& ascii_to_indexes)
 {
-    std::array<cipher::vigenere::vignere_table_t<VIGENERE_ALPHABET_SIZE>, VIGENERE_ALPHABET_SIZE> ret;
+    std::array<cipher::vigenere::vignere_table_t<VIGENERE_ALPHABET_SIZE, char>, VIGENERE_ALPHABET_SIZE> ret;
     for(auto i = 0u; i < VIGENERE_ALPHABET_SIZE; i++)
         ret[i] = cipher::vigenere::create_decode_table(alphabets[i], ascii_to_indexes[i]);
     return ret;
@@ -52,11 +52,11 @@ void rotate_vigenere(const std::span<const char, cipher_len> ciphertext, const s
 
     for(auto k = 0u; k < VIGENERE_ALPHABET_SIZE; k++) {
         auto vigenered = cipher::empty_buffer<cipher_len>();
-        cipher::vigenere::vigenere<false>(std::span{ vigenered },
-                                          std::span{ ciphertext },
-                                          key,
-                                          decoding_tables[k],
-                                          ascii_to_indexes[k]);
+        cipher::vigenere::encode<false>(std::span{ vigenered },
+                                        std::span{ ciphertext },
+                                        key,
+                                        decoding_tables[k],
+                                        ascii_to_indexes[k]);
 
         // std::println("Trying {}", cipher::buffer_to_string(vigenered));
 
