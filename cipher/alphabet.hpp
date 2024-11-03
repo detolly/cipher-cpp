@@ -6,8 +6,8 @@
 namespace cipher::alphabet
 {
 
-template<std::size_t ALPHABET_LENGTH>
-using alphabet_t = std::array<std::uint8_t, ALPHABET_LENGTH>;
+template<std::size_t ALPHABET_LENGTH, typename charT = char>
+using alphabet_t = std::array<charT, ALPHABET_LENGTH>;
 
 template<std::size_t ALPHABET_LENGTH>
 using ascii_to_index_t = std::array<std::uint8_t, 256>;
@@ -17,7 +17,7 @@ constexpr static alphabet_t<ALPHABET_LENGTH-1> create(const char (&str)[ALPHABET
 {
     alphabet_t<ALPHABET_LENGTH - 1> arr;
     for(auto i = 0u; i < ALPHABET_LENGTH - 1; i++)
-        arr[i] = static_cast<std::uint8_t>(str[i]);
+        arr[i] = str[i];
     return arr;
 }
 
@@ -26,7 +26,7 @@ constexpr ascii_to_index_t<ALPHABET_LENGTH> create_ascii_to_index_array(const al
 {
     ascii_to_index_t<ALPHABET_LENGTH> ascii_to_value{};
     for(std::uint8_t i = 0u; i < ALPHABET_LENGTH; i++)
-        ascii_to_value[alphabet[i]] = static_cast<std::uint8_t>(i);
+        ascii_to_value[static_cast<std::uint8_t>(alphabet[i])] = static_cast<std::uint8_t>(i);
     return ascii_to_value;
 }
 

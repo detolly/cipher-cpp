@@ -1,6 +1,5 @@
 -std=c++26
 -Wall
--Werror
 -Wextra
 -Wpedantic
 -Wconversion

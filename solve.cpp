@@ -12,11 +12,10 @@
 using namespace std::string_view_literals;
 
 
-constexpr static const auto vigenere_alphabet = cipher::alphabet::create("/+9876543210zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA");
-// constexpr static const auto vigenere_alphabet = cipher::base64::DEFAULT_ALPHABET;
+// constexpr static const auto vigenere_alphabet = cipher::alphabet::create("/+9876543210zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA");
+constexpr static const auto vigenere_alphabet = cipher::base64::DEFAULT_ALPHABET;
 // constexpr static const auto vigenere_ascii_to_index = cipher::alphabet::create_ascii_to_index_array(vigenere_alphabet);
 // constexpr static const auto vigenere_decoding_table = cipher::vigenere::create_decode_table(vigenere_alphabet, vigenere_ascii_to_index);
-
 
 constexpr static const auto VIGENERE_ALPHABET_SIZE = vigenere_alphabet.size();
 constexpr static auto create_rotated_alphabets()
@@ -44,15 +43,15 @@ constexpr static auto create_decoding_tables(const auto& alphabets, const auto& 
     return ret;
 }
 
-constexpr static const auto rotated_alphabets = create_rotated_alphabets();
-constexpr static const auto ascii_to_indexes = create_ascii_to_indexes(rotated_alphabets);
-constexpr static const auto decoding_tables = create_decoding_tables(rotated_alphabets, ascii_to_indexes);
-
 template<std::size_t cipher_len, typename charT>
-void rotate_vigenere(const std::span<const unsigned char, cipher_len> ciphertext, const std::span<charT> key)
+void rotate_vigenere(const std::span<const char, cipher_len> ciphertext, const std::span<charT> key)
 {
+    constexpr static const auto rotated_alphabets = create_rotated_alphabets();
+    constexpr static const auto ascii_to_indexes = create_ascii_to_indexes(rotated_alphabets);
+    constexpr static const auto decoding_tables = create_decoding_tables(rotated_alphabets, ascii_to_indexes);
+
     for(auto k = 0u; k < VIGENERE_ALPHABET_SIZE; k++) {
-        cipher::buffer_t<cipher_len> vigenered;
+        auto vigenered = cipher::empty_buffer<cipher_len>();
         cipher::vigenere::vigenere<false>(std::span{ vigenered },
                                           std::span{ ciphertext },
                                           key,
@@ -61,7 +60,7 @@ void rotate_vigenere(const std::span<const unsigned char, cipher_len> ciphertext
 
         // std::println("Trying {}", cipher::buffer_to_string(vigenered));
 
-        cipher::buffer_t<cipher_len * 3 / 4> plaintext;
+        auto plaintext = cipher::empty_buffer<cipher_len * 3 / 4>();
         cipher::base64::decode(std::span{ plaintext },
                                std::span{ vigenered });
 
@@ -72,8 +71,8 @@ void rotate_vigenere(const std::span<const unsigned char, cipher_len> ciphertext
                 break;
         }
 
-        if (printable)
-            std::println("PLAINTEXT: {}", cipher::buffer_to_string(plaintext));
+        if (printable) [[unlikely]]
+            std::println("PLAINTEXT: {}", cipher::to_string(plaintext));
     }
 }
 
@@ -97,7 +96,7 @@ constexpr void make_key(char* key, size_t current_index, size_t size)
     }
 }
 
-void bruteforce_key()
+static void bruteforce_key()
 {
     char key[13]{ 0 };
     for(auto i = 0u; i < sizeof(key); i++)
@@ -123,7 +122,9 @@ void wordlist_key()
 
 int main()
 {
-    // bruteforce_key();
+    if constexpr (false) {
+        bruteforce_key();
+    }
     wordlist_key();
 }
 
