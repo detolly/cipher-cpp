@@ -4,8 +4,7 @@
 #include <cstdint>
 #include <span>
 
-#include <cipher/alphabet.hpp>
-#include <type_traits>
+#include "alphabet.hpp"
 
 namespace cipher::vigenere
 {
