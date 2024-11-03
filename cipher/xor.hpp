@@ -1,14 +1,17 @@
 #pragma once
 
 #include <cstdint>
+#include <span>
 
 namespace cipher::Xor
 {
 
-constexpr static void Xor(unsigned char* cipher, const std::size_t size, const unsigned char* xor_key, const std::size_t xor_key_size)
+template<typename charT, typename charT2, std::size_t ex1, std::size_t ex2>
+constexpr static void Xor(const std::span<charT, ex1> cipher,
+                          const std::span<charT2, ex2> xor_key)
 {
-    for(auto i = 0u; i < size; i++)
-        cipher[i] ^= xor_key[i % xor_key_size];
+    for(auto i = 0u; i < cipher.size(); i++)
+        cipher[i] ^= xor_key[i % xor_key.size()];
 }
 
 }
