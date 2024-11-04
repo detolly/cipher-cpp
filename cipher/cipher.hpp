@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <string_view>
+#include <span>
 
 namespace cipher
 {
@@ -29,6 +30,16 @@ template<std::size_t len>
 constexpr static std::string_view to_string(const buffer_t<len, char>& buffer)
 {
     return std::string_view{ buffer.begin(), buffer.end() };
+}
+
+template<typename charT, std::size_t ex>
+constexpr static bool is_print(const std::span<charT, ex> w) {
+    for(auto i = 0u; i < w.size(); i++) {
+        const auto c = static_cast<const std::uint8_t>(w[i]);
+        if (c < 0x20) return false;
+        if (c > 0x7e) return false;
+    }
+    return true;
 }
 
 }
