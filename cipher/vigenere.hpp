@@ -74,7 +74,9 @@ constexpr static void vigenere(const std::span<charT, ex1> target,
     }
 }
 
-template<bool autokey, std::size_t ALPHABET_LENGTH, typename charT, typename charT2, typename charT3, typename charT4, std::size_t ex1, std::size_t ex2, std::size_t ex3>
+template<bool autokey, std::size_t ALPHABET_LENGTH,
+         typename charT, typename charT2, typename charT3, typename charT4,
+         std::size_t ex1, std::size_t ex2, std::size_t ex3>
 constexpr static void encode(const std::span<charT, ex1> ciphertext,
                              const std::span<charT2, ex2> plaintext,
                              const std::span<charT3, ex3> key,
@@ -84,7 +86,9 @@ constexpr static void encode(const std::span<charT, ex1> ciphertext,
     return vigenere<autokey, true>(ciphertext, plaintext, key, encoding_table, ascii_to_index);
 }
 
-template<bool autokey, std::size_t ALPHABET_LENGTH, typename charT, typename charT2, typename charT3, typename charT4, std::size_t ex1, std::size_t ex2, std::size_t ex3>
+template<bool autokey, std::size_t ALPHABET_LENGTH,
+         typename charT, typename charT2, typename charT3, typename charT4,
+         std::size_t ex1, std::size_t ex2, std::size_t ex3>
 constexpr static void decode(const std::span<charT, ex1> plaintext,
                              const std::span<charT2, ex2> ciphertext,
                              const std::span<charT3, ex3> key,
@@ -94,7 +98,24 @@ constexpr static void decode(const std::span<charT, ex1> plaintext,
     return vigenere<autokey, false>(plaintext, ciphertext, key, decoding_table, ascii_to_index);
 }
 
-template<bool autokey, bool encode, std::size_t ALPHABET_LENGTH, typename charT, typename charT2, typename charT3, std::size_t ex1, std::size_t ex2, std::size_t ex3>
+template<bool encode, std::size_t ALPHABET_LENGTH>
+constexpr static std::uint8_t
+alphabet_index(const alphabet::ascii_to_index_t<ALPHABET_LENGTH>& ascii_to_index,
+               const std::uint8_t source_char,
+               const std::uint8_t key_char)
+{
+    if constexpr (encode)
+        return (ascii_to_index[source_char] + ascii_to_index[key_char]) % ALPHABET_LENGTH;
+
+    if (ascii_to_index[source_char] < ascii_to_index[key_char])
+        return (ALPHABET_LENGTH - ascii_to_index[key_char] + ascii_to_index[source_char]);
+
+    return (ascii_to_index[source_char] - ascii_to_index[key_char]) % ALPHABET_LENGTH;
+}
+
+template<bool autokey, bool encode, std::size_t ALPHABET_LENGTH,
+         typename charT, typename charT2, typename charT3,
+         std::size_t ex1, std::size_t ex2, std::size_t ex3>
 constexpr static void vigenere(const std::span<charT, ex1> target,
                                const std::span<charT2, ex2> source,
                                const std::span<charT3, ex3> key,
@@ -103,19 +124,9 @@ constexpr static void vigenere(const std::span<charT, ex1> target,
 {
     static_assert(source.size() == target.size());
     for(auto i = 0u; i < source.size(); i++) {
-        const auto x = key_character<autokey, encode>(target, source, key, i);
-        const auto z = static_cast<std::uint8_t>(source[i]);
-
-        std::uint8_t index;
-        if constexpr (encode) {
-            index = (ascii_to_index[z] + ascii_to_index[x]) % ALPHABET_LENGTH;
-        } else {
-            if (ascii_to_index[z] < ascii_to_index[x]) {
-                index = (ALPHABET_LENGTH - ascii_to_index[x] + ascii_to_index[z]);
-            } else {
-                index = (ascii_to_index[z] - ascii_to_index[x]) % ALPHABET_LENGTH;
-            }
-        }
+        const auto source_char = static_cast<std::uint8_t>(source[i]);
+        const auto key_char = key_character<autokey, encode>(target, source, key, i);
+        const auto index = alphabet_index<encode, ALPHABET_LENGTH>(ascii_to_index, source_char, key_char);
 
         target[i] = static_cast<charT>(alphabet[index]);
     }
