@@ -8,10 +8,9 @@
 #include <cipher/entropy.hpp>
 #include <cipher/vigenere.hpp>
 #include <cipher/xor.hpp>
-#include <thread>
 
 // constexpr static const auto ciphertext = cipher::buffer(
-// "OkEeZHnifuMdYB1IbHyAfb0g2FJzrVmfkKcSbKrpQGvhQ0/bvu76RdnGy/WtT7T3");
+//     "OkEeZHnifuMdYB1IbHyAfb0g2FJzrVmfkKcSbKrpQGvhQ0/bvu76RdnGy/WtT7T3");
 constexpr static const auto ciphertext = cipher::buffer(
     "kCmlgFi6GuJNgkNI1Q41fbfyLoCFTCvlqkZiI0KIAXAzP1U1uy1BE4U"
     "fPBfpKmmLObjYnQNRBaPtKiVWzc5A4v0w3xIe8FOhAGJZ7g4in0wn"
@@ -21,6 +20,7 @@ constexpr const auto key = cipher::buffer("TheGiant");
 constexpr static auto plaintext_alphabet = cipher::base64::DEFAULT_ALPHABET;
 
 std::uint64_t i = 0;
+std::uint64_t max = 0;
 
 static void test_alphabet(cipher::alphabet::alphabet_t<plaintext_alphabet.size()>& alphabet,
                           std::array<bool, plaintext_alphabet.size()>& available_characters,
@@ -29,10 +29,15 @@ static void test_alphabet(cipher::alphabet::alphabet_t<plaintext_alphabet.size()
                           char plain[ciphertext.size()],
                           std::size_t plaintext_index)
 {
-    // if (i++ % 1000000 == 0) [[unlikely]]
-        std::println(stderr, "PLAIN: {} INDEX: {} ALPHABET: {}", plain, ciphertext_index, std::string_view{ alphabet.begin(), alphabet.end() });
+    if (i++ % 1000000 == 0 || ciphertext_index > max) [[unlikely]] {
+        std::println(stderr, "PLAIN: {:60} ALPHABET: {}", plain, std::string_view{ alphabet.begin(), alphabet.end() });
+        if (ciphertext_index > max) {
+            std::println(stderr, "NEW MAX");
+            max = ciphertext_index;
+        }
+    }
 
-    if (ciphertext_index >= ciphertext.size()) {
+    if (ciphertext_index >= ciphertext.size()) [[unlikely]] {
         std::println("ALPHABET: {}", std::string_view{ alphabet.begin(), alphabet.end() });
         return;
     }
@@ -42,24 +47,30 @@ static void test_alphabet(cipher::alphabet::alphabet_t<plaintext_alphabet.size()
         alphabet[i] = c;
         ascii_to_index[static_cast<std::uint8_t>(c)] = i;
     };
+
     const auto dealloc_place = [&](std::uint8_t i) {
         ascii_to_index[static_cast<std::uint8_t>(alphabet[i])] = static_cast<std::uint8_t>(-1);
         available_characters[i] = true;
-        alphabet[i] = 0;
+        alphabet[i] = '_';
     };
 
-    const auto move_forward = [&](const char chars_to_place[2], std::size_t index, auto pred) {
-        for(std::uint8_t i = 0u; i < available_characters.size(); i++) {
-            if (!available_characters[i])
-                continue;
-
-            alloc_place(i, chars_to_place[0]);
-            for(std::uint8_t j = 0u; j < available_characters.size(); j++) {
-                if (!available_characters[j])
+    const auto alloc_and_move_forward = [&](const char c, const auto& pred) {
+        if (ascii_to_index[static_cast<std::uint8_t>(c)] == static_cast<std::uint8_t>(-1)) {
+            for(std::uint8_t i = 0u; i < available_characters.size(); i++) {
+                if (!available_characters[i])
                     continue;
+                alloc_place(i, c);
+                pred();
+                dealloc_place(i);
+            }
+        } else {
+            pred();
+        }
+    };
 
-                alloc_place(j, chars_to_place[1]);
-
+    const auto move_forward = [&](const char chars_to_place[2], std::size_t index, const auto& pred) {
+        alloc_and_move_forward(chars_to_place[0], [&](){
+            alloc_and_move_forward(chars_to_place[1], [&](){
                 const auto source_char = static_cast<std::uint8_t>(ciphertext[ciphertext_index + index]);
                 const auto key_char = cipher::vigenere::key_character<false, false>(
                     std::span{ plain, plaintext_index + index },
@@ -79,15 +90,13 @@ static void test_alphabet(cipher::alphabet::alphabet_t<plaintext_alphabet.size()
                         }
                     }
                 }
-                dealloc_place(j);
-            }
-            dealloc_place(i);
-        }
+            });
+        });
     };
 
     const auto pred4 = [&](const char plaintext){
         plain[plaintext_index + 2] += plaintext;
-        if (cipher::is_print(std::span{ plain + plaintext_index, 3 })) {
+        if (cipher::is_common_print(std::span{ plain + plaintext_index, 3 })) {
             const char chars_to_place[] = { ciphertext[ciphertext_index + 4], key[(ciphertext_index + 4) % key.size()] };
             move_forward(chars_to_place, 2, [&]([[maybe_unused]] const auto& plaintext){
                 test_alphabet(alphabet, available_characters, ascii_to_index, ciphertext_index + 4, plain, plaintext_index + 3);
@@ -98,7 +107,7 @@ static void test_alphabet(cipher::alphabet::alphabet_t<plaintext_alphabet.size()
     const auto pred3 = [&](const char plaintext){
         plain[plaintext_index + 1] += static_cast<char>((plaintext & 0x3c) >> 2);
         plain[plaintext_index + 2] = static_cast<char>((plaintext & 0x3) << 6);
-        if (!cipher::is_print(plain[plaintext_index + 1]))
+        if (!cipher::is_common_print(plain[plaintext_index + 1]))
             return;
         if (plain[plaintext_index + 2] & (1 << 7))
             return;
@@ -119,7 +128,7 @@ static void test_alphabet(cipher::alphabet::alphabet_t<plaintext_alphabet.size()
 
     const auto pred1 = [&](const char plaintext){
         plain[plaintext_index + 0] = static_cast<char>(plaintext << 2);
-        if (!cipher::is_print(static_cast<char>(plaintext << 2)))
+        if (!cipher::is_common_print(static_cast<char>(plaintext << 2)))
             return;
 
         const char chars_to_place[] = { ciphertext[ciphertext_index + 1], key[(ciphertext_index + 1) % key.size()] };
@@ -128,24 +137,32 @@ static void test_alphabet(cipher::alphabet::alphabet_t<plaintext_alphabet.size()
 
     const char chars_to_place[] = { ciphertext[ciphertext_index], key[(ciphertext_index) % key.size()] };
     move_forward(chars_to_place, 0, pred1);
+    plain[plaintext_index + 0] = '\0';
+    plain[plaintext_index + 1] = '\0';
+    plain[plaintext_index + 2] = '\0';
 }
 
 static void bruteforce_alphabet()
 {
-    for(auto i = plaintext_alphabet.size() - 1; i >= 0; i--) {
+    // #pragma omp parallel for
+    // for(auto i = plaintext_alphabet.size() - 1; i >= 0; i--) {
         cipher::alphabet::alphabet_t<plaintext_alphabet.size()> cipher_alphabet{ 0 };
         cipher::alphabet::ascii_to_index_t<plaintext_alphabet.size()> cipher_ascii_to_index{(std::uint8_t)-1};
-        std::array<bool, plaintext_alphabet.size()> available_characters{ 0 };
+        std::array<bool, plaintext_alphabet.size()> available_characters{ true };
         for(auto& b : available_characters)
             b = true;
+        for(auto& b : cipher_ascii_to_index)
+            b = static_cast<std::uint8_t>(-1);
+        for(auto& b : cipher_alphabet)
+            b = '_';
 
-        cipher_alphabet[0] = plaintext_alphabet[i];
-        cipher_ascii_to_index[(std::uint8_t)plaintext_alphabet[i]] = 0;
-        available_characters[0] = false;
+        // cipher_alphabet[0] = plaintext_alphabet[i];
+        // cipher_ascii_to_index[(std::uint8_t)plaintext_alphabet[i]] = 0;
+        // available_characters[0] = false;
 
         char plaintext[ciphertext.size()]{ 0 };
         test_alphabet(cipher_alphabet, available_characters, cipher_ascii_to_index, 0, plaintext, 0);
-    }
+    // }
 
 }
 
