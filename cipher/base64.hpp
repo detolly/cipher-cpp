@@ -20,12 +20,14 @@ constexpr static void decode(
     static_assert(cipher.size() % 4 == 0);
     static_assert(decipher.size() >= (cipher.size() * 3 / 4));
     for(auto i = 0u; i < cipher.size() / 4; i++) {
-        const auto pos_of_char_1 = ascii_to_value[static_cast<std::uint8_t>(cipher[i*4 + 1])];
-        const auto pos_of_char_2 = ascii_to_value[static_cast<std::uint8_t>(cipher[i*4 + 2])];
+        const auto char_1 = ascii_to_value[static_cast<std::uint8_t>(cipher[i * 4 + 0])];
+        const auto char_2 = ascii_to_value[static_cast<std::uint8_t>(cipher[i * 4 + 1])];
+        const auto char_3 = ascii_to_value[static_cast<std::uint8_t>(cipher[i * 4 + 2])];
+        const auto char_4 = ascii_to_value[static_cast<std::uint8_t>(cipher[i * 4 + 3])];
 
-        decipher[i*3 + 0] = static_cast<charT>((ascii_to_value[static_cast<std::uint8_t>(cipher[i*4])] << 2) + ((pos_of_char_1 & 0x30) >> 4));
-        decipher[i*3 + 1] = static_cast<charT>(((pos_of_char_1 & 0x0f) << 4) + ((pos_of_char_2 & 0x3c) >> 2));
-        decipher[i*3 + 2] = static_cast<charT>(((pos_of_char_2 & 0x03) << 6) + ascii_to_value[static_cast<std::uint8_t>(cipher[i*4 + 3])]);
+        decipher[i * 3 + 0] = static_cast<charT>((char_1 << 2) + ((char_2 & 0x30) >> 4));
+        decipher[i * 3 + 1] = static_cast<charT>(((char_2 & 0x0f) << 4) + ((char_3 & 0x3c) >> 2));
+        decipher[i * 3 + 2] = static_cast<charT>(((char_3 & 0x03) << 6) + char_4);
     }
 }
 
