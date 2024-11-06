@@ -5,6 +5,8 @@
 #include <string_view>
 #include <span>
 
+#include "alphabet.hpp"
+
 namespace cipher
 {
 
@@ -48,23 +50,9 @@ constexpr static bool is_print(const char c) {
     return true;
 }
 
-// template<typename charT, std::size_t ex>
-// constexpr static bool is_common_print(const std::span<charT, ex> w) {
-//     for(auto i = 0u; i < w.size(); i++) {
-//         const auto c = static_cast<const std::uint8_t>(w[i]);
-//         if (c < 0x30) return false;
-//         if (c > 0x39 && c < 0x41) return false;
-//         if (c > 0x5A && c <= 0x60) return false;
-//         if (c > 0x7a) return false;
-//     }
-//     return true;
-// }
-
 constexpr static bool is_common_print(const char c) {
-    if (c < 0x30) return false;
-    // if (c > 0x39 && c < 0x41) return false;
-    // if (c > 0x5A && c < 0x60) return false;
-    if (c > 0x7a) return false;
+    if (c < 0x20) return false;                  // obvious
+    if (c > 0x7A) return false;                  // obvious
     return true;
 }
 
@@ -72,6 +60,22 @@ template<typename charT, std::size_t ex>
 constexpr static bool is_common_print(const std::span<charT, ex> w) {
     for(auto i = 0u; i < w.size(); i++) {
         if (!is_common_print(w[i]))
+            return false;
+    }
+    return true;
+}
+
+template<alphabet::alphabet_t alphabet, typename charT>
+constexpr static bool char_is_in_alphabet(const charT c) {
+    for(const auto a : alphabet)
+        if (c == a) return true;
+    return false;
+}
+
+template<alphabet::alphabet_t alphabet, typename charT, std::size_t ex>
+constexpr static bool char_is_in_alphabet(const std::span<charT, ex> w) {
+    for(auto i = 0u; i < w.size(); i++) {
+        if (!char_is_in_alphabet<alphabet>(w[i]))
             return false;
     }
     return true;

@@ -27,8 +27,13 @@ static void test_alphabet_substitution(cipher::alphabet::alphabet_t<plaintext_al
                                        char* plain,
                                        std::size_t plaintext_index)
 {
-    if (iteration++ % 10000000 == 0) [[unlikely]]
-        std::println(stderr, "PLAIN: {:60} ALPHABET: {}", std::string_view{ plain, plaintext_index }, std::string_view{ alphabet.begin(), alphabet.end() });
+    std::array<std::array<bool, plaintext_alphabet.size()>, 256> ascii_can_go_there;
+    for(auto i = 0u; i < ascii_can_go_there.size(); i++)
+        for(std::uint8_t j = 0; j < ascii_can_go_there[i].size(); j++)
+            ascii_can_go_there[i][j] = true;
+
+    // if (iteration++ % 1000 == 0 && plaintext_index > 5) [[unlikely]]
+    std::println(stderr, "PLAIN: {:60} ALPHABET: {}", std::string_view{ plain, plaintext_index }, std::string_view{ alphabet.begin(), alphabet.end() });
 
     if (ciphertext_index >= ciphertext.size()) [[unlikely]] {
         std::println("FOUND PLAIN: {:60} ALPHABET: {}", plain, std::string_view{ alphabet.begin(), alphabet.end() });
@@ -41,30 +46,33 @@ static void test_alphabet_substitution(cipher::alphabet::alphabet_t<plaintext_al
         ascii_to_index[static_cast<std::uint8_t>(c)] = i;
     };
 
-    const auto dealloc_place = [&ascii_to_index, &available_characters, &alphabet](std::uint8_t i) {
-        ascii_to_index[static_cast<std::uint8_t>(alphabet[i])] = static_cast<std::uint8_t>(-1);
+    const auto dealloc_place = [&ascii_to_index, &available_characters, &alphabet, &ascii_can_go_there](std::uint8_t i) {
+        ascii_to_index[(uint8_t)(alphabet[i])] = static_cast<std::uint8_t>(-1);
         available_characters[i] = true;
+        ascii_can_go_there[(uint8_t)alphabet[i]][i] = false;
         alphabet[i] = '_';
     };
 
-    const auto alloc_and_move_forward = [&ascii_to_index, &available_characters, &alloc_place, &dealloc_place](const char c, const auto& pred) {
-        if (ascii_to_index[static_cast<std::uint8_t>(c)] == static_cast<std::uint8_t>(-1)) {
-            for(std::uint8_t i = 0u; i < available_characters.size(); i++) {
-                if (!available_characters[i])
-                    continue;
-                alloc_place(i, c);
-                pred();
-                dealloc_place(i);
-            }
-        } else {
+    const auto alloc_and_move_forward = [&ascii_to_index, &available_characters, &ascii_can_go_there, &alloc_place, &dealloc_place](const char c, const auto& pred) {
+        if (ascii_to_index[static_cast<std::uint8_t>(c)] != static_cast<std::uint8_t>(-1)) {
             pred();
+            return;
+        }
+
+        for(std::uint8_t i = 0u; i < available_characters.size(); i++) {
+            if (!available_characters[i] || !ascii_can_go_there[static_cast<uint8_t>(c)][i])
+                continue;
+            alloc_place(i, c);
+            pred();
+            dealloc_place(i);
         }
     };
 
     const auto move_forward = [&alloc_and_move_forward, &ascii_to_index](const char char_to_place, [[maybe_unused]] std::size_t index, const auto& pred) {
-        alloc_and_move_forward(char_to_place, [&pred, &ascii_to_index, char_to_place]() {
+        const auto translate_to_plaintext = [&pred, &ascii_to_index, char_to_place]() {
             pred(plaintext_alphabet[ascii_to_index[static_cast<std::uint8_t>(char_to_place)]]);
-        });
+        };
+        alloc_and_move_forward(char_to_place, translate_to_plaintext);
     };
 
     const auto pred4 = [plain, plaintext_index, ciphertext_index, &alphabet, &available_characters, &ascii_to_index](const char plaintext){
@@ -109,8 +117,8 @@ static void test_alphabet_substitution(cipher::alphabet::alphabet_t<plaintext_al
         move_forward(chars_to_place, 1, pred2);
     };
 
-    const char chars_to_place = ciphertext[ciphertext_index];
-    move_forward(chars_to_place, 0, pred1);
+    const char char_to_place = ciphertext[ciphertext_index];
+    move_forward(char_to_place, 0, pred1);
 
     plain[plaintext_index + 0] = '\0';
     plain[plaintext_index + 1] = '\0';
@@ -122,14 +130,19 @@ static void test_alphabet_vigenere(cipher::alphabet::alphabet_t<plaintext_alphab
                                    std::array<bool, plaintext_alphabet.size()>& available_characters,
                                    cipher::alphabet::ascii_to_index_t<plaintext_alphabet.size()>& ascii_to_index,
                                    std::size_t ciphertext_index,
-                                   char plain[ciphertext.size()],
+                                   char* plain,
                                    std::size_t plaintext_index)
 {
-    if (iteration++ % 1000000 == 0) [[unlikely]]
+    std::array<std::array<bool, plaintext_alphabet.size()>, 256> ascii_can_go_there;
+    for(auto i = 0u; i < ascii_can_go_there.size(); i++)
+        for(std::uint8_t j = 0; j < ascii_can_go_there[i].size(); j++)
+            ascii_can_go_there[i][j] = true;
+
+    if (iteration++ % 10000000 == 0) [[unlikely]]
         std::println(stderr, "PLAIN: {:60} ALPHABET: {}", plain, std::string_view{ alphabet.begin(), alphabet.end() });
 
     if (ciphertext_index >= ciphertext.size()) [[unlikely]] {
-        std::println("PLAIN: {:60} ALPHABET: {}", plain, std::string_view{ alphabet.begin(), alphabet.end() });
+        std::println("FOUND PLAIN: {:60} ALPHABET: {}", plain, std::string_view{ alphabet.begin(), alphabet.end() });
         return;
     }
 
@@ -139,16 +152,17 @@ static void test_alphabet_vigenere(cipher::alphabet::alphabet_t<plaintext_alphab
         ascii_to_index[static_cast<std::uint8_t>(c)] = i;
     };
 
-    const auto dealloc_place = [&ascii_to_index, &available_characters, &alphabet](std::uint8_t i) {
+    const auto dealloc_place = [&ascii_can_go_there, &ascii_to_index, &available_characters, &alphabet](std::uint8_t i) {
         ascii_to_index[static_cast<std::uint8_t>(alphabet[i])] = static_cast<std::uint8_t>(-1);
         available_characters[i] = true;
+        ascii_can_go_there[(uint8_t)alphabet[i]][i] = false;
         alphabet[i] = '_';
     };
 
-    const auto alloc_and_move_forward = [&ascii_to_index, &available_characters, &alloc_place, &dealloc_place](const char c, const auto& pred) {
+    const auto alloc_and_move_forward = [&ascii_can_go_there, &ascii_to_index, &available_characters, &alloc_place, &dealloc_place](const char c, const auto& pred) {
         if (ascii_to_index[static_cast<std::uint8_t>(c)] == static_cast<std::uint8_t>(-1)) {
             for(std::uint8_t i = 0u; i < available_characters.size(); i++) {
-                if (!available_characters[i])
+                if (!available_characters[i] || !ascii_can_go_there[static_cast<uint8_t>(c)][i])
                     continue;
                 alloc_place(i, c);
                 pred();
@@ -235,6 +249,7 @@ constexpr static std::tuple<cipher::alphabet::alphabet_t<plaintext_alphabet.size
     cipher::alphabet::alphabet_t<plaintext_alphabet.size()> cipher_alphabet{};
     cipher::alphabet::ascii_to_index_t<plaintext_alphabet.size()> cipher_ascii_to_index{};
     std::array<bool, plaintext_alphabet.size()> available_characters{};
+
     for(auto& b : available_characters)
         b = true;
     for(auto& b : cipher_ascii_to_index)
@@ -254,13 +269,13 @@ constexpr static std::tuple<cipher::alphabet::alphabet_t<plaintext_alphabet.size
 static void bruteforce_alphabet()
 {
     // std::println("{}", std::string_view{ plaintext_alphabet.begin(), plaintext_alphabet.end() });
-    // #pragma omp parallel for
+    #pragma omp parallel for
     for(auto i = 0u; i < plaintext_alphabet.size(); i++) {
-        // auto [alphabet, ascii_to_index, available_characters] = create_starting_configuration(std::string_view{ plaintext_alphabet.begin() + i, 1 });
-        auto [alphabet, ascii_to_index, available_characters] = create_starting_configuration("TheGiant");
+        // auto [alphabet, ascii_to_index, available_characters] = create_starting_configuration("");
+        auto [alphabet, ascii_to_index, available_characters] = create_starting_configuration(std::string_view{ plaintext_alphabet.begin() + i, 1 });
 
-        thread_local char plaintext[ciphertext.size()]{ 0 };
-        test_alphabet_substitution(alphabet, available_characters, ascii_to_index, 0, plaintext, 0);
+        char plaintext[ciphertext.size()]{ 0 };
+        test_alphabet_vigenere(alphabet, available_characters, ascii_to_index, 0, plaintext, 0);
     }
 
     std::println("done?");
