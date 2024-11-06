@@ -148,4 +148,20 @@ namespace substitution
     
 }
 
+namespace base64
+{
+    template<std::size_t len, typename charT>
+    constexpr static auto decode_b64(const cipher::buffer_t<len, charT>& buffer)
+    {
+        auto ciphertext = cipher::empty_buffer<len*3/4, charT>();
+        cipher::base64::decode(std::span{ ciphertext },
+                               std::span{ buffer });
+        return ciphertext;
+    }
+
+    constexpr static auto test_base64_1 = decode_b64(cipher::buffer("SGVsbG8gV29ybGRk"));
+    static_assert(cipher::to_string(test_base64_1) == "Hello Worldd"sv, cipher::to_string(test_base64_1));
+
+}
+
 }
