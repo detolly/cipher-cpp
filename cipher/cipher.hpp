@@ -34,32 +34,16 @@ constexpr static std::string_view to_string(const buffer_t<len, char>& buffer)
     return std::string_view{ buffer.begin(), buffer.end() };
 }
 
-template<typename charT, std::size_t ex>
-constexpr static bool is_print(const std::span<charT, ex> w) {
-    for(auto i = 0u; i < w.size(); i++) {
-        const auto c = static_cast<const std::uint8_t>(w[i]);
-        if (c < 0x20) return false;
-        if (c > 0x7e) return false;
-    }
-    return true;
-}
-
 constexpr static bool is_print(const char c) {
-    if (c < 0x20) return false;
-    if (c > 0x7e) return false;
-    return true;
-}
-
-constexpr static bool is_common_print(const char c) {
     if (c < 0x20) return false;                  // obvious
     if (c > 0x7A) return false;                  // obvious
     return true;
 }
 
 template<typename charT, std::size_t ex>
-constexpr static bool is_common_print(const std::span<charT, ex> w) {
+constexpr static bool is_print(const std::span<charT, ex> w) {
     for(auto i = 0u; i < w.size(); i++) {
-        if (!is_common_print(w[i]))
+        if (!is_print(w[i]))
             return false;
     }
     return true;

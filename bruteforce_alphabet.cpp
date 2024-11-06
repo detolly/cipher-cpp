@@ -87,7 +87,7 @@ static void test_alphabet_substitution(cipher::alphabet::alphabet_t<plaintext_al
         plain[plaintext_index + 1] += static_cast<char>((plaintext & 0x3c) >> 2);
         plain[plaintext_index + 2] = static_cast<char>((plaintext & 0x3) << 6);
         // std::println("PRED3: {}", std::string_view{ plain, plaintext_index + 3 });
-        if (!cipher::is_common_print(plain[plaintext_index + 1]))
+        if (!cipher::is_print(plain[plaintext_index + 1]))
             return;
         if (plain[plaintext_index + 2] & (1 << 7))
             return;
@@ -110,7 +110,7 @@ static void test_alphabet_substitution(cipher::alphabet::alphabet_t<plaintext_al
     const auto pred1 = [plain, plaintext_index, &move_forward, &pred2, ciphertext_index](const char plaintext){
         plain[plaintext_index + 0] = static_cast<char>(plaintext << 2);
         // std::println("PRED1: {}", std::string_view{ plain, plaintext_index + 1 });
-        if (!cipher::is_common_print(static_cast<char>(plaintext << 2)))
+        if (!cipher::is_print(static_cast<char>(plaintext << 2)))
             return;
 
         const char chars_to_place = ciphertext[ciphertext_index + 1];
@@ -209,7 +209,7 @@ static void test_alphabet_vigenere(cipher::alphabet::alphabet_t<plaintext_alphab
     const auto pred3 = [plain, plaintext_index, &move_forward, ciphertext_index, &pred4](const char plaintext){
         plain[plaintext_index + 1] += static_cast<char>((plaintext & 0x3c) >> 2);
         plain[plaintext_index + 2] = static_cast<char>((plaintext & 0x3) << 6);
-        if (!cipher::is_common_print(plain[plaintext_index + 1]))
+        if (!cipher::is_print(plain[plaintext_index + 1]))
             return;
         if (plain[plaintext_index + 2] & (1 << 7))
             return;
@@ -230,7 +230,7 @@ static void test_alphabet_vigenere(cipher::alphabet::alphabet_t<plaintext_alphab
 
     const auto pred1 = [plain, plaintext_index, &move_forward, &pred2, ciphertext_index](const char plaintext){
         plain[plaintext_index + 0] = static_cast<char>(plaintext << 2);
-        if (!cipher::is_common_print(static_cast<char>(plaintext << 2)))
+        if (!cipher::is_print(static_cast<char>(plaintext << 2)))
             return;
 
         const char chars_to_place[] = { ciphertext[ciphertext_index + 1], key[(ciphertext_index + 1) % key.size()] };
