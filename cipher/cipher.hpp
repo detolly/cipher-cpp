@@ -1,7 +1,6 @@
 #pragma once
 
 #include <array>
-#include <cstdint>
 #include <string_view>
 #include <span>
 
@@ -9,6 +8,7 @@
 
 namespace cipher
 {
+
 
 template<std::size_t BUFFER_LEN, typename charT>
 using buffer_t = std::array<charT, BUFFER_LEN>;
@@ -34,30 +34,54 @@ constexpr static std::string_view to_string(const buffer_t<len, char>& buffer)
     return std::string_view{ buffer.begin(), buffer.end() };
 }
 
-constexpr static bool is_print(const char c) {
-    if (c < 0x20) return false;                  // obvious
-    if (c > 0x7A) return false;                  // obvious
+constexpr static bool is_common_print(const char c) {
+    if (c == 0x20) return true;
+    if (c < 0x30) return false;
+    if (c > 0x7A) return false;
+
+    if (c > 0x3A && c < 0x41) return false;
+    if (c > 0x5B && c < 0x61) return false;
+
     return true;
 }
 
 template<typename charT, std::size_t ex>
-constexpr static bool is_print(const std::span<charT, ex> w) {
-    for(auto i = 0u; i < w.size(); i++) {
-        if (!is_print(w[i]))
+constexpr static bool is_common_print(const std::span<charT, ex> w)
+{
+    for(auto i = 0u; i < w.size(); i++)
+        if (!is_common_print(w[i]))
             return false;
-    }
+
     return true;
 }
 
-template<alphabet::alphabet_t alphabet, typename charT>
-constexpr static bool char_is_in_alphabet(const charT c) {
+constexpr static bool is_print(const char c) {
+    if (c < 0x20) return false;
+    if (c > 0x7A) return false;
+    return true;
+}
+
+template<typename charT, std::size_t ex>
+constexpr static bool is_print(const std::span<charT, ex> w)
+{
+    for(auto i = 0u; i < w.size(); i++)
+        if (!is_print(w[i]))
+            return false;
+
+    return true;
+}
+
+template<auto alphabet, typename charT>
+constexpr static bool char_is_in_alphabet(const charT c)
+{
     for(const auto a : alphabet)
         if (c == a) return true;
     return false;
 }
 
-template<alphabet::alphabet_t alphabet, typename charT, std::size_t ex>
-constexpr static bool char_is_in_alphabet(const std::span<charT, ex> w) {
+template<auto alphabet, typename charT, std::size_t extent>
+constexpr static bool is_in_alphabet(const std::span<charT, extent> w)
+{
     for(auto i = 0u; i < w.size(); i++) {
         if (!char_is_in_alphabet<alphabet>(w[i]))
             return false;
