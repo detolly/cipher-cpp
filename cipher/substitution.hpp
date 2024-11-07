@@ -13,7 +13,9 @@ constexpr static void substitute(const std::span<charT, ex1> target,
                              const alphabet::ascii_to_index_t<ALPHABET_LENGTH>& source_ascii_to_index,
                              const alphabet::alphabet_t<ALPHABET_LENGTH>& target_alphabet)
 {
-    static_assert(source.size() == target.size());
+    if consteval {
+        static_assert(source.size() == target.size());
+    }
     for(auto i = 0u; i < target.size(); i++) {
         target[i] = target_alphabet[source_ascii_to_index[source[i]]];
     }

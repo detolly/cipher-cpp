@@ -65,7 +65,9 @@ constexpr static void vigenere(const std::span<charT, ex1> target,
                                const vignere_table_t<ALPHABET_LENGTH, charT4>& vigenere_table,
                                const alphabet::ascii_to_index_t<ALPHABET_LENGTH>& ascii_to_index)
 {
-    static_assert(source.size() == target.size());
+    if consteval {
+        static_assert(source.size() == target.size());
+    }
     for(auto i = 0u; i < source.size(); i++) {
         const auto key_char = key_character<autokey, encode>(target, source, key, i);
         const auto source_char = static_cast<std::uint8_t>(source[i]);
@@ -125,7 +127,9 @@ constexpr static void vigenere(const std::span<charT, ex1> target,
                                const alphabet::alphabet_t<ALPHABET_LENGTH>& alphabet,
                                const alphabet::ascii_to_index_t<ALPHABET_LENGTH>& ascii_to_index)
 {
-    static_assert(source.size() == target.size());
+    if consteval {
+        static_assert(source.size() == target.size());
+    }
     for(auto i = 0u; i < source.size(); i++) {
         const auto source_char = static_cast<std::uint8_t>(source[i]);
         const auto key_char = key_character<autokey, encode>(target, source, key, i);

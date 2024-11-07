@@ -71,8 +71,8 @@ constexpr static bool is_print(const std::span<charT, ex> w)
     return true;
 }
 
-template<auto alphabet, typename charT>
-constexpr static bool char_is_in_alphabet(const charT c)
+template<auto alphabet>
+constexpr static bool is_in_alphabet(const char c)
 {
     for(const auto a : alphabet)
         if (c == a) return true;
@@ -83,7 +83,7 @@ template<auto alphabet, typename charT, std::size_t extent>
 constexpr static bool is_in_alphabet(const std::span<charT, extent> w)
 {
     for(auto i = 0u; i < w.size(); i++) {
-        if (!char_is_in_alphabet<alphabet>(w[i]))
+        if (!is_in_alphabet<alphabet>(static_cast<char>(w[i])))
             return false;
     }
     return true;
