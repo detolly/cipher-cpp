@@ -20,7 +20,8 @@ constexpr static auto plaintext_alphabet = cipher::alphabet::create("/+987654321
 constexpr static auto plaintext_ascii_to_value = cipher::alphabet::create_ascii_to_index_array(plaintext_alphabet);
 
 // constexpr static auto common_alphabet = cipher::alphabet::create("ABCDEFGHIJKLMNOPQRTSUVWXYZabcdefghijklmnopqrstuvwxyz1234567890.,");
-constexpr static auto common_alphabet = cipher::alphabet::create("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+// constexpr static auto common_alphabet = cipher::alphabet::create("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+constexpr static auto common_alphabet = cipher::alphabet::create("abcdefghijklmnopqrstuvwxyz");
 // constexpr static auto common_alphabet = cipher::alphabet::create("0123456789 ");
 
 thread_local std::uint64_t iteration = 0;
@@ -77,11 +78,11 @@ static void test_alphabet_substitution(cipher::alphabet::alphabet_t<plaintext_al
         }
     };
 
-    const auto move_forward = [&alloc_and_move_forward, &ascii_to_index](const char char_to_place, [[maybe_unused]] std::size_t index, const auto& pred) {
-        const auto translate_to_plaintext = [&pred, &ascii_to_index, char_to_place]() {
-            pred(plaintext_alphabet[ascii_to_index[static_cast<std::uint8_t>(char_to_place)]]);
+    const auto move_forward = [&alloc_and_move_forward, &ascii_to_index, ciphertext_index](std::size_t index, const auto& pred) {
+        const auto translate_to_plaintext = [&pred, &ascii_to_index, ciphertext_index]() {
+            pred(plaintext_alphabet[ascii_to_index[static_cast<std::uint8_t>(ciphertext[ciphertext_index + index])]]);
         };
-        alloc_and_move_forward(char_to_place, translate_to_plaintext);
+        alloc_and_move_forward(translate_to_plaintext);
     };
 
     const auto base64_decode_fourth_char = [base64_plaintext, plain, plaintext_index, ciphertext_index, &alphabet, &available_characters, &ascii_to_index](const char plain_base64_char){
@@ -184,6 +185,7 @@ static void test_alphabet_vigenere(cipher::alphabet::alphabet_t<plaintext_alphab
                                    std::size_t plaintext_index)
 {
     if (iteration++ % 100000000 == 0) [[unlikely]]
+    // if (ciphertext_index > 4 * 1) [[unlikely]]
         std::println(stderr, "PLAIN: {:64} ALPHABET: {}", plain, std::string_view{ alphabet.begin(), alphabet.end() });
 
     if (ciphertext_index >= ciphertext.size()) [[unlikely]] {
@@ -221,8 +223,8 @@ static void test_alphabet_vigenere(cipher::alphabet::alphabet_t<plaintext_alphab
     const auto move_forward = [&alloc_and_move_forward, &alloc_place, &dealloc_place, &ascii_to_index, ciphertext_index, &available_characters, &alphabet](const std::size_t index, const auto& pred) {
         const auto source_char = ciphertext[ciphertext_index + index];
         const auto key_char = key[(ciphertext_index + index) % key.size()];
-        alloc_and_move_forward(source_char, [&, key_char]() {
-            alloc_and_move_forward(key_char, [&, source_char]() {
+        alloc_and_move_forward(key_char, [&, key_char]() {
+            alloc_and_move_forward(source_char, [&, source_char]() {
                 const auto index = cipher::vigenere::alphabet_index<false, 64>(ascii_to_index, source_char, key_char);
                 if (!available_characters[index]) {
                     pred(alphabet[index]);
@@ -277,7 +279,7 @@ static void test_alphabet_vigenere(cipher::alphabet::alphabet_t<plaintext_alphab
         plain[plaintext_index + 0] = static_cast<char>(old_value + ((value & 0x30) >> 4));
         plain[plaintext_index + 1] = static_cast<char>((value & 0x0f) << 4);
 
-        if (!cipher::char_is_in_alphabet<common_alphabet>(plain[plaintext_index + 0]) || plain[0] == ' ' || plain[0] == '!' || plain[plaintext_index + 1] & (1 << 7)) {
+        if (!cipher::char_is_in_alphabet<common_alphabet>(plain[plaintext_index + 0]) || plain[0] == 'B' || plain[0] == 'A' || plain[plaintext_index + 1] & (1 << 7)) {
             plain[plaintext_index + 0] = old_value;
             plain[plaintext_index + 1] = 0;
             return;
@@ -344,15 +346,10 @@ constexpr static void add_to_configuration(cipher::alphabet::alphabet_t<plaintex
 
 static void bruteforce_alphabet()
 {
-    #pragma omp parallel for
-    for(auto i = 0u; i < plaintext_alphabet.size(); i++) {
-        auto [alphabet, ascii_to_index, available_characters] = create_starting_configuration("");
-        add_to_configuration(alphabet, ascii_to_index, available_characters, { plaintext_alphabet.begin() + i, 1 });
+    auto [alphabet, ascii_to_index, available_characters] = create_starting_configuration("");
 
-        char plaintext[ciphertext.size()]{ 0 };
-        test_alphabet_vigenere(alphabet, available_characters, ascii_to_index, 0, plaintext, 0);
-        std::println("EXIT {}", plaintext_alphabet[i]);
-    }
+    char plaintext[ciphertext.size()]{ 0 };
+    test_alphabet_vigenere(alphabet, available_characters, ascii_to_index, 0, plaintext, 0);
 
     std::println("done?");
 }
