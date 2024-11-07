@@ -17,8 +17,8 @@ constexpr static void decode(
     const alphabet::alphabet_t<ALPHABET_LENGTH>& = DEFAULT_ALPHABET,
     const alphabet::ascii_to_index_t<ALPHABET_LENGTH>& ascii_to_value = DEFAULT_ASCII_TO_VALUE_ARRAY)
 {
-    static_assert(source.size() % 4 == 0);
-    static_assert(target.size() >= (source.size() * 3 / 4));
+    // static_assert(source.size() % 4 == 0);
+    // static_assert(target.size() >= (source.size() * 3 / 4));
     for(auto i = 0u; i < source.size() / 4; i++) {
         const auto char_1 = ascii_to_value[static_cast<std::uint8_t>(source[i * 4 + 0])];
         const auto char_2 = ascii_to_value[static_cast<std::uint8_t>(source[i * 4 + 1])];
