@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cassert>
 #include <string_view>
 #include <span>
 
@@ -32,6 +33,24 @@ template<std::size_t len>
 constexpr static std::string_view to_string(const buffer_t<len, char>& buffer)
 {
     return std::string_view{ buffer.begin(), buffer.end() };
+}
+
+template<auto alphabet>
+constexpr static auto index_in_alphabet(const char c)
+{
+    for(std::uint8_t i = 0u; i < alphabet.size(); i++)
+        if (alphabet[i] == c) return i;
+
+    __builtin_unreachable();
+}
+
+template<size_t ALPHABET_LENGTH>
+consteval static std::size_t index_in_alphabet(const cipher::alphabet::alphabet_t<ALPHABET_LENGTH>& alphabet,const char c)
+{
+    for(auto i = 0u; i < alphabet.size(); i++)
+        if (alphabet[i] == c) return i;
+
+    __builtin_unreachable();
 }
 
 constexpr static bool is_common_print(const char c) {

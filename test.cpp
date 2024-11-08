@@ -159,8 +159,20 @@ namespace base64
         return ciphertext;
     }
 
+    template<std::size_t len, typename charT>
+    constexpr static auto decode_b64_cexpr(const cipher::buffer_t<len, charT>& buffer)
+    {
+        auto ciphertext = cipher::empty_buffer<len*3/4, charT>();
+        cipher::base64::decode<cipher::base64::DEFAULT_ALPHABET>(std::span{ ciphertext },
+                                                                 std::span{ buffer });
+        return ciphertext;
+    }
+
     constexpr static auto test_base64_1 = decode_b64(cipher::buffer("SGVsbG8gV29ybGRk"));
     static_assert(cipher::to_string(test_base64_1) == "Hello Worldd"sv, cipher::to_string(test_base64_1));
+
+    constexpr static auto test_base64_2 = decode_b64_cexpr(cipher::buffer("SGVsbG8gV29ybGRk"));
+    static_assert(cipher::to_string(test_base64_2) == "Hello Worldd"sv, cipher::to_string(test_base64_2));
 
 }
 
