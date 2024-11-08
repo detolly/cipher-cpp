@@ -76,6 +76,7 @@ struct Alphabet
                 continue;
             alloc(i, c);
             then(c);
+            dealloc(i);
         }
     }
 
@@ -93,77 +94,75 @@ struct Alphabet
     }
 };
 
-template<auto ciphertext, auto get_next_char, auto heuristic, auto you_win>
+template<auto ciphertext, auto get_next_char, auto heuristic, auto you_win, auto progress_report>
 constexpr static void bruteforce_base64_alphabet(Alphabet<64>& alphabet,
                                                  std::size_t ciphertext_index,
                                                  char* plain,
                                                  std::size_t plaintext_index)
 {
+    progress_report(alphabet, plain);
+
     if (ciphertext_index >= ciphertext.size()) [[unlikely]] {
         you_win(alphabet, plain);
         return;
     }
 
     const auto base64_decode_fourth_char = [plain, plaintext_index, ciphertext_index, &alphabet](const char plain_base64_char){
-        const auto value = cipher::base64::DEFAULT_ASCII_TO_VALUE_ARRAY[static_cast<std::uint8_t>(plain_base64_char)];
-        const auto old_value = plain[plaintext_index + 2];
-        plain[plaintext_index + 2] = static_cast<char>(old_value + value);
+        auto& third_char = plain[plaintext_index + 2];
+        const auto value = cipher::index_in_alphabet<cipher::base64::DEFAULT_ALPHABET>(plain_base64_char);
+        const auto old_value = third_char;
 
-        if (heuristic(std::span{ plain + plaintext_index, 3 }))
-            bruteforce_base64_alphabet<ciphertext, get_next_char, heuristic, you_win>(alphabet, ciphertext_index + 4, plain, plaintext_index + 3);
+        third_char = static_cast<char>(old_value + value);
+        if (heuristic(third_char))
+            bruteforce_base64_alphabet<ciphertext, get_next_char, heuristic, you_win, progress_report>(
+                alphabet,
+                ciphertext_index + 4,
+                plain,
+                plaintext_index + 3);
 
-        plain[plaintext_index + 2] = old_value;
+        third_char = old_value;
     };
 
-    const auto base64_decode_third_char = [&alphabet, plain, plaintext_index, &base64_decode_fourth_char](const char plain_base64_char){
-        const auto value = cipher::base64::DEFAULT_ASCII_TO_VALUE_ARRAY[static_cast<std::uint8_t>(plain_base64_char)];
-        const auto old_value = plain[plaintext_index + 1];
-        plain[plaintext_index + 1] = static_cast<char>(old_value + ((value & 0x3c) >> 2));
-        plain[plaintext_index + 2] = static_cast<char>((value & 0x03) << 6);
+    const auto base64_decode_third_char = [&alphabet, plain, ciphertext_index, plaintext_index, &base64_decode_fourth_char](const char plain_base64_char){
+        auto& second_char = plain[plaintext_index + 1];
+        auto& third_char = plain[plaintext_index + 2];
+        const auto value = cipher::index_in_alphabet<cipher::base64::DEFAULT_ALPHABET>(plain_base64_char);
+        const auto old_value = second_char;
 
-        if (plain[plaintext_index + 2] & (1 << 7) || !heuristic(plain[plaintext_index + 1])) {
-            plain[plaintext_index + 1] = old_value;
-            plain[plaintext_index + 2] = 0;
-            return;
-        }
+        second_char = static_cast<char>(old_value + ((value & 0x3c) >> 2));
+        third_char = static_cast<char>((value & 0x03) << 6);
+        if ((third_char & (1 << 7)) == 0 && heuristic(plain[plaintext_index + 1]))
+            get_next_char(alphabet, ciphertext_index + 3, base64_decode_fourth_char);
 
-        get_next_char(alphabet, 3, base64_decode_fourth_char);
-
-        plain[plaintext_index + 1] = old_value;
-        plain[plaintext_index + 2] = 0;
+        second_char = old_value;
+        third_char = 0;
     };
 
-    const auto base64_decode_second_char = [plain, plaintext_index, &base64_decode_third_char, &alphabet](const char plain_base64_char){
-        const auto value = cipher::base64::DEFAULT_ASCII_TO_VALUE_ARRAY[static_cast<std::uint8_t>(plain_base64_char)];
-        const auto old_value = plain[plaintext_index + 0];
-        plain[plaintext_index + 0] = static_cast<char>(old_value + ((value & 0x30) >> 4));
-        plain[plaintext_index + 1] = static_cast<char>((value & 0x0f) << 4);
+    const auto base64_decode_second_char = [plain, plaintext_index, ciphertext_index, &base64_decode_third_char, &alphabet](const char plain_base64_char){
+        auto& first_char = plain[plaintext_index + 0];
+        auto& second_char = plain[plaintext_index + 1];
+        const auto value = cipher::index_in_alphabet<cipher::base64::DEFAULT_ALPHABET>(plain_base64_char);
+        const auto old_value = first_char;
 
-        if (plain[plaintext_index + 1] & (1 << 7) || !heuristic(plain[plaintext_index])) {
-            plain[plaintext_index + 0] = old_value;
-            plain[plaintext_index + 1] = 0;
-            return;
-        }
+        first_char = static_cast<char>(old_value + ((value & 0x30) >> 4));
+        second_char = static_cast<char>((value & 0x0f) << 4);
+        if ((second_char & (1 << 7)) == 0 && heuristic(first_char))
+            get_next_char(alphabet, ciphertext_index + 2, base64_decode_third_char);
 
-        get_next_char(alphabet, 2, base64_decode_third_char);
-
-        plain[plaintext_index + 0] = old_value;
-        plain[plaintext_index + 1] = 0;
+        first_char = old_value;
+        second_char = 0;
     };
 
-    const auto base64_decode_first_char = [plain, plaintext_index, &base64_decode_second_char, &alphabet](const char plain_base64_char){
-        const auto value = cipher::base64::DEFAULT_ASCII_TO_VALUE_ARRAY[static_cast<std::uint8_t>(plain_base64_char)];
-        plain[plaintext_index + 0] = static_cast<char>(value << 2);
+    const auto base64_decode_first_char = [plain, plaintext_index, ciphertext_index, &base64_decode_second_char, &alphabet](const char plain_base64_char){
+        auto& first_char = plain[plaintext_index + 0];
+        const auto value = cipher::index_in_alphabet<cipher::base64::DEFAULT_ALPHABET>(plain_base64_char);
 
-        if (!cipher::is_print(plain[plaintext_index])) {
-            plain[plaintext_index + 0] = 0;
-            return;
-        }
+        first_char = static_cast<char>(value << 2);
+        if (cipher::is_print(first_char))
+            get_next_char(alphabet, ciphertext_index + 1, base64_decode_second_char);
 
-        get_next_char(alphabet, 1, base64_decode_second_char);
-
-        plain[plaintext_index + 0] = 0;
+        first_char = 0;
     };
 
-    get_next_char(alphabet, 0, base64_decode_first_char);
+    get_next_char(alphabet, ciphertext_index, base64_decode_first_char);
 }
