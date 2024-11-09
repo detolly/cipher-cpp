@@ -90,7 +90,7 @@ static void bruteforce_alphabet()
 
     // auto alphabet = Base64Alphabet::create_starting_configuration("");
     // auto alphabet = Base64Alphabet::create_alphabet_with_plaintext<translate_plaintext_vigenere<plaintext_alphabet, ciphertext>>("Der Riese");
-    auto state = base64_alphabet_bruteforce_state::create_state_with_plaintext<translate_plaintext_substitution<ciphertext>>("July");
+    auto state = base64_alphabet_bruteforce_state::create_state_with_plaintext<translate_plaintext_substitution<ciphertext>>("March");
 
     // bruteforce_alphabet_vigenere<plaintext_alphabet, ciphertext, key, heuristic, you_win, progress_report>(alphabet, plaintext);
     bruteforce_alphabet_substitution<ciphertext, heuristic, you_win, progress_report>(state);

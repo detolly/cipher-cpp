@@ -121,12 +121,30 @@ struct base64_alphabet_bruteforce_state
             translate_and_alloc(a, i * 4 + 2, c3);
             translate_and_alloc(a, i * 4 + 3, c4);
 
-            a.plaintext[i*3] = plain[0];
-            a.plaintext[i*3+1] = plain[1];
-            a.plaintext[i*3+2] = plain[2];
+            a.plaintext[i * 3] = plain[0];
+            a.plaintext[i * 3 + 1] = plain[1];
+            a.plaintext[i * 3 + 2] = plain[2];
 
             a.plaintext_index += 3;
             a.ciphertext_index += 4;
+        }
+
+        const auto left = plaintext.size() % 3;
+        if (left == 1) {
+            char c1 = cipher::base64::DEFAULT_ALPHABET[static_cast<std::uint8_t>((plaintext[plaintext.size() - 1] & 0b11111100) >> 2)];
+            translate_and_alloc(a, a.ciphertext_index, c1);
+            a.plaintext[a.plaintext_index] = plaintext[plaintext.size() - 1];
+            a.plaintext_index += 1;
+            a.ciphertext_index += 1;
+        } else if (left == 2) {
+            char c1 = cipher::base64::DEFAULT_ALPHABET[static_cast<std::uint8_t>((plaintext[plaintext.size() - 2] & 0b11111100) >> 2)];
+            char c2 = cipher::base64::DEFAULT_ALPHABET[static_cast<std::uint8_t>(((plaintext[plaintext.size() - 2] & 0b00000011) << 4) | ((plaintext[plaintext.size() - 1] & 0b11110000) >> 4))];
+            translate_and_alloc(a, a.ciphertext_index, c1);
+            translate_and_alloc(a, a.ciphertext_index + 1, c2);
+            a.plaintext[a.plaintext_index] = plaintext[plaintext.size() - 2];
+            a.plaintext[a.plaintext_index + 1] = plaintext[plaintext.size() - 1];
+            a.plaintext_index += 2;
+            a.ciphertext_index += 2;
         }
 
         return a;
