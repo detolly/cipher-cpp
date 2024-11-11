@@ -75,7 +75,7 @@ constexpr static bool is_common_print(const std::span<charT, ex> w)
 }
 
 constexpr static bool is_print(const char c) {
-    if (c == '\n' || c == '\r') return true;
+    // if (c == '\n' || c == '\r') return true;
     if (c < 0x20) return false;
     if (c > 0x7A) return false;
     return true;
