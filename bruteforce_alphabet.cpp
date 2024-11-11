@@ -1,6 +1,6 @@
-#include <array>
 #include <cstdio>
 #include <print>
+#include <vector>
 
 #include <cipher/alphabet.hpp>
 #include <cipher/base64.hpp>
@@ -11,18 +11,18 @@
 using namespace cipher::bruteforce;
 
 template<auto plaintext_alphabet, auto ciphertext, auto key, auto heuristic, auto you_win, auto progress_report>
-constexpr static void bruteforce_alphabet_vigenere(base64_alphabet_bruteforce_state& alphabet, char* plaintext)
+constexpr static void bruteforce_alphabet_vigenere(base64_alphabet_bruteforce_state& state, char* plaintext)
 {
-    constexpr static auto get_next_char = [](base64_alphabet_bruteforce_state& alphabet, const std::size_t ciphertext_index, const auto& next) {
+    constexpr static auto get_next_char = [](base64_alphabet_bruteforce_state& state, const std::size_t ciphertext_index, const auto& next) {
         const auto source_char = ciphertext[ciphertext_index];
         const auto key_char = key[(ciphertext_index) % key.size()];
-        alphabet.alloc_at_all_index(key_char, [&](const char key_char) {
-            alphabet.alloc_at_all_index(source_char, [&](const char source_char) {
+        state.alloc_at_all_index(key_char, [&](const char key_char) {
+            state.alloc_at_all_index(source_char, [&](const char source_char) {
                 const auto index = cipher::vigenere::alphabet_index<false, 64>(
-                    alphabet.ascii_to_index, 
+                    state.ascii_to_index, 
                     source_char,
                     key_char);
-                alphabet.template alloc_all_char_at_index<plaintext_alphabet>(
+                state.template alloc_all_char_at_index<plaintext_alphabet>(
                     index, 
                     [&](const char c){
                         next(c);
@@ -31,7 +31,7 @@ constexpr static void bruteforce_alphabet_vigenere(base64_alphabet_bruteforce_st
         });
     };
 
-    bruteforce_base64_alphabet<ciphertext, get_next_char, heuristic, you_win, progress_report>(alphabet, 0, plaintext, 0);
+    bruteforce_base64<ciphertext, get_next_char, heuristic, you_win, progress_report>(state, 0, plaintext, 0);
 }
 
 template<auto ciphertext>
@@ -43,18 +43,19 @@ constexpr static auto translate_plaintext_substitution(base64_alphabet_bruteforc
 }
 
 template<auto ciphertext, auto heuristic, auto you_win, auto progress_report>
-constexpr static void bruteforce_alphabet_substitution(base64_alphabet_bruteforce_state& alphabet)
+constexpr static void bruteforce_alphabet_substitution(base64_alphabet_bruteforce_state& state)
 {
-    constexpr static auto get_next_char = [](base64_alphabet_bruteforce_state& alphabet, const std::size_t ciphertext_index, const auto& next) {
+    constexpr static auto get_next_char = [](base64_alphabet_bruteforce_state& state, const std::size_t ciphertext_index, const auto& next) {
         const auto cipher_char = ciphertext[ciphertext_index];
-        alphabet.template alloc_all_char_at_index<cipher::base64::DEFAULT_ALPHABET>(
-            cipher::index_in_alphabet<cipher::base64::DEFAULT_ALPHABET>(cipher_char), 
+        const auto cipher_index = cipher::index_in_alphabet<cipher::base64::DEFAULT_ALPHABET>(cipher_char);
+        state.template alloc_all_char_at_index<cipher::base64::DEFAULT_ALPHABET>(
+            cipher_index ,
             [&](const char c){
                 next(c);
             });
     };
 
-    bruteforce_base64_alphabet<ciphertext, get_next_char, heuristic, you_win, progress_report>(alphabet);
+    bruteforce_base64<base64_alphabet_bruteforce_state, ciphertext, get_next_char, heuristic, you_win, progress_report>(state);
 }
 
 // constexpr static const auto ciphertext = cipher::buffer(
@@ -67,20 +68,21 @@ constexpr static const auto ciphertext = cipher::buffer(
 [[maybe_unused]] constexpr const auto key = cipher::buffer("TheGiant");
 
 thread_local std::uint64_t iteration{0};
-
-static void bruteforce_alphabet()
+std::vector<base64_alphabet_bruteforce_state> alphabets;
+static void bruteforce_alphabet(const std::string_view plaintext)
 {
     constexpr static auto you_win = [](const base64_alphabet_bruteforce_state& alphabet) {
+        alphabets.push_back(alphabet);
         std::println("FOUND ALPHABET: {:64} PLAINTEXT: {}", alphabet.string_view(), alphabet.plaintext_string_view());
     };
     constexpr static auto progress_report = [](const auto& alphabet){
-        if (iteration++ % 10000000 == 0) 
+        if (iteration++ % 100000000 == 0) 
             std::println(stderr, "PLAIN: {:64} ALPHABET: {}", alphabet.plaintext_string_view(), alphabet.string_view());
     };
 
     constexpr static auto heuristic = [](const auto plain) {
         // constexpr static auto common_alphabet = cipher::alphabet::create("abcdefghijklmnopqrstuvwxyz");
-        // constexpr static auto common_alphabet = cipher::alphabet::create("ABCDEFGHIJKLMNOPQRTSUVWXYZabcdefghijklmnopqrstuvwxyz1234567890!.,");
+        // constexpr static auto common_alphabet = cipher::alphabet::create("ABCDEFGHIJKLMNOPQRTSUVWXYZabcdefghijklmnopqrstuvwxyz1234567890!.,:@()\"'/\n\r ");
         // constexpr static auto common_alphabet = cipher::alphabet::create("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
         // constexpr static auto common_alphabet = cipher::alphabet::create("0123456789 ");
         // return cipher::is_in_alphabet<common_alphabet>(plain);
@@ -90,17 +92,21 @@ static void bruteforce_alphabet()
 
     // auto alphabet = Base64Alphabet::create_starting_configuration("");
     // auto alphabet = Base64Alphabet::create_alphabet_with_plaintext<translate_plaintext_vigenere<plaintext_alphabet, ciphertext>>("Der Riese");
-    auto state = base64_alphabet_bruteforce_state::create_state_with_plaintext<translate_plaintext_substitution<ciphertext>>("March");
+    auto state = base64_alphabet_bruteforce_state::create_state_with_plaintext<translate_plaintext_substitution<ciphertext>>(plaintext);
 
     // bruteforce_alphabet_vigenere<plaintext_alphabet, ciphertext, key, heuristic, you_win, progress_report>(alphabet, plaintext);
     bruteforce_alphabet_substitution<ciphertext, heuristic, you_win, progress_report>(state);
 
+    for(const auto& alphabet : alphabets) {
+        std::println(stderr, "FOUND PLAIN: {:64} ALPHABET: {}", alphabet.plaintext_string_view(), alphabet.string_view());
+    }
+
     std::println("done?", state.string_view(), state.plaintext_string_view());
 }
 
-int main()
+int main(int argc, const char* argv[])
 {
-    bruteforce_alphabet();
+    bruteforce_alphabet(std::string_view{ argv[1] });
     return 0;
 }
 
