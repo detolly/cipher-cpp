@@ -16,8 +16,8 @@ struct base64_alphabet_bruteforce_state
     std::size_t ciphertext_index{ 0 };
     cipher::alphabet::alphabet_t<64> alphabet;
     std::array<bool, 64> available_characters;
-    cipher::alphabet::ascii_to_index_t<64> ascii_to_index;
-    char plaintext[1024]{ 0 };
+    cipher::alphabet::ascii_to_index_t ascii_to_index;
+    char plaintext[256]{ 0 };
 
     constexpr base64_alphabet_bruteforce_state()
     {

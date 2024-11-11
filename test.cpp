@@ -41,7 +41,7 @@ namespace vigenere
         cipher::vigenere::encode<false>(std::span{ ciphertext },
                                         std::span{ buffer },
                                         std::span{ key },
-                                        vigenere_alphabet,
+                                        std::span{ vigenere_alphabet },
                                         vigenere_ascii_to_index);
         return ciphertext;
     }
@@ -65,7 +65,7 @@ namespace vigenere
         cipher::vigenere::decode<false>(std::span{ ciphertext },
                                         std::span{ buffer },
                                         std::span{ key },
-                                        vigenere_alphabet,
+                                        std::span{ vigenere_alphabet },
                                         vigenere_ascii_to_index);
         return ciphertext;
     }
@@ -119,7 +119,7 @@ namespace vigenere
         cipher::vigenere::encode<true>(std::span{ ciphertext },
                                         std::span{ buffer },
                                         std::span{ key },
-                                        vigenere_alphabet,
+                                        std::span{ vigenere_alphabet },
                                         vigenere_ascii_to_index);
         return ciphertext;
     }
@@ -131,7 +131,7 @@ namespace vigenere
         cipher::vigenere::decode<true>(std::span{ ciphertext },
                                         std::span{ buffer },
                                         std::span{ key },
-                                        vigenere_alphabet,
+                                        std::span{ vigenere_alphabet },
                                         vigenere_ascii_to_index);
         return ciphertext;
     }

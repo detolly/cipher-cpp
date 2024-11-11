@@ -12,12 +12,12 @@ namespace cipher::base64
 constexpr static const auto DEFAULT_ALPHABET = alphabet::create("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
 constexpr static const auto DEFAULT_ASCII_TO_VALUE_ARRAY = alphabet::create_ascii_to_index_array(DEFAULT_ALPHABET);
 
-template<std::size_t ALPHABET_LENGTH = DEFAULT_ALPHABET.size(), typename charT, typename charT2, std::size_t ex1, std::size_t ex2>
+template<typename charT, typename charT2, std::size_t ex1, std::size_t ex2>
 constexpr static void decode(
     const std::span<charT, ex1> target,
     const std::span<charT2, ex2> source,
-    const alphabet::alphabet_t<ALPHABET_LENGTH>& = DEFAULT_ALPHABET,
-    const alphabet::ascii_to_index_t<ALPHABET_LENGTH>& ascii_to_value = DEFAULT_ASCII_TO_VALUE_ARRAY)
+    const alphabet::alphabet_t<64>& = DEFAULT_ALPHABET,
+    const alphabet::ascii_to_index_t& ascii_to_value = DEFAULT_ASCII_TO_VALUE_ARRAY)
 {
     if consteval {
         static_assert(source.size() % 4 == 0);

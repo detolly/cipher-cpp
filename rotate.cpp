@@ -46,14 +46,13 @@ constexpr static bool rotate_vigenere(const std::span<const char, cipher_len> ci
 {
     constexpr static const auto rotated_alphabets = create_rotated_alphabets();
     constexpr static const auto ascii_to_indexes = create_ascii_to_indexes(rotated_alphabets);
-    constexpr static const auto decoding_tables = create_decoding_tables(rotated_alphabets, ascii_to_indexes);
 
     for(auto k = 0u; k < VIGENERE_ALPHABET_SIZE; k++) {
         auto vigenered = cipher::empty_buffer<cipher_len>();
         cipher::vigenere::encode<false>(std::span{ vigenered },
                                         std::span{ ciphertext },
                                         key,
-                                        decoding_tables[k],
+                                        rotated_alphabets[k],
                                         ascii_to_indexes[k]);
 
         auto plaintext = cipher::empty_buffer<cipher_len * 3 / 4>();

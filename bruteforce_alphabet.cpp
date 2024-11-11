@@ -11,15 +11,16 @@
 using namespace cipher::bruteforce;
 
 template<auto plaintext_alphabet, auto ciphertext, auto key, auto heuristic, auto you_win, auto progress_report>
-constexpr static void bruteforce_alphabet_vigenere(base64_alphabet_bruteforce_state& state, char* plaintext)
+constexpr static void bruteforce_alphabet_vigenere(base64_alphabet_bruteforce_state& state)
 {
     constexpr static auto get_next_char = [](base64_alphabet_bruteforce_state& state, const std::size_t ciphertext_index, const auto& next) {
         const auto source_char = ciphertext[ciphertext_index];
         const auto key_char = key[(ciphertext_index) % key.size()];
         state.alloc_at_all_index(key_char, [&](const char key_char) {
             state.alloc_at_all_index(source_char, [&](const char source_char) {
-                const auto index = cipher::vigenere::alphabet_index<false, 64>(
-                    state.ascii_to_index, 
+                const auto index = cipher::vigenere::alphabet_index<false>(
+                    state.ascii_to_index,
+                    64,
                     source_char,
                     key_char);
                 state.template alloc_all_char_at_index<plaintext_alphabet>(
@@ -31,7 +32,7 @@ constexpr static void bruteforce_alphabet_vigenere(base64_alphabet_bruteforce_st
         });
     };
 
-    bruteforce_base64<ciphertext, get_next_char, heuristic, you_win, progress_report>(state, 0, plaintext, 0);
+    bruteforce_base64<ciphertext, get_next_char, heuristic, you_win, progress_report>(state);
 }
 
 template<auto ciphertext>
@@ -101,7 +102,7 @@ static void bruteforce_alphabet(const std::string_view plaintext)
         std::println(stderr, "FOUND PLAIN: {:64} ALPHABET: {}", alphabet.plaintext_string_view(), alphabet.alphabet_string_view());
     }
 
-    std::println("done?", state.alphabet_string_view(), state.plaintext_string_view());
+    std::println("done?");
 }
 
 int main(int argc, const char* argv[])
