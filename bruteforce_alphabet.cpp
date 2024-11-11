@@ -71,13 +71,13 @@ thread_local std::uint64_t iteration{0};
 std::vector<base64_alphabet_bruteforce_state> alphabets;
 static void bruteforce_alphabet(const std::string_view plaintext)
 {
-    constexpr static auto you_win = [](const base64_alphabet_bruteforce_state& alphabet) {
-        alphabets.push_back(alphabet);
-        std::println("FOUND ALPHABET: {:64} PLAINTEXT: {}", alphabet.string_view(), alphabet.plaintext_string_view());
+    constexpr static auto you_win = [](const auto& state) {
+        alphabets.push_back(state);
+        std::println("FOUND ALPHABET: {:64} PLAINTEXT: {}", state.alphabet_string_view(), state.plaintext_string_view());
     };
-    constexpr static auto progress_report = [](const auto& alphabet){
+    constexpr static auto progress_report = [](const auto& state){
         if (iteration++ % 100000000 == 0) 
-            std::println(stderr, "PLAIN: {:64} ALPHABET: {}", alphabet.plaintext_string_view(), alphabet.string_view());
+            std::println(stderr, "ALPHABET: {} PLAIN: \n{:64} ", state.plaintext_string_view(), state.alphabet_string_view());
     };
 
     constexpr static auto heuristic = [](const auto plain) {
@@ -98,10 +98,10 @@ static void bruteforce_alphabet(const std::string_view plaintext)
     bruteforce_alphabet_substitution<ciphertext, heuristic, you_win, progress_report>(state);
 
     for(const auto& alphabet : alphabets) {
-        std::println(stderr, "FOUND PLAIN: {:64} ALPHABET: {}", alphabet.plaintext_string_view(), alphabet.string_view());
+        std::println(stderr, "FOUND PLAIN: {:64} ALPHABET: {}", alphabet.plaintext_string_view(), alphabet.alphabet_string_view());
     }
 
-    std::println("done?", state.string_view(), state.plaintext_string_view());
+    std::println("done?", state.alphabet_string_view(), state.plaintext_string_view());
 }
 
 int main(int argc, const char* argv[])

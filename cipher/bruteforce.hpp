@@ -150,7 +150,7 @@ struct base64_alphabet_bruteforce_state
         return a;
     }
 
-    constexpr std::string_view string_view() const 
+    constexpr std::string_view alphabet_string_view() const 
     {
         return std::string_view{ alphabet.begin(), alphabet.end() };
     }
