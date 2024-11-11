@@ -77,7 +77,7 @@ static void bruteforce_alphabet(const std::string_view plaintext)
     };
     constexpr static auto progress_report = [](const auto& state){
         if (iteration++ % 100000000 == 0) 
-            std::println(stderr, "ALPHABET: {} PLAIN: \n{:64} ", state.plaintext_string_view(), state.alphabet_string_view());
+            std::println(stderr, "ALPHABET: {} PLAIN: \n{:64} ", state.alphabet_string_view(), state.plaintext_string_view());
     };
 
     constexpr static auto heuristic = [](const auto plain) {
