@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstring>
 #include <print>
 #include <vector>
 
@@ -10,45 +11,61 @@
 
 using namespace cipher::bruteforce;
 
-template<auto plaintext_alphabet, auto ciphertext, auto key, auto heuristic, auto you_win, auto progress_report>
+#define THE_GIANT_FIRST 1
+template<auto key> constexpr static auto get_first_key(const base64_key_bruteforce_state& state) {
+#ifdef THE_GIANT_FIRST
+    return std::span{ state.key, state.key_index };
+#else
+    return std::span{ key };
+#endif
+}
+template<auto key> constexpr static auto get_second_key(const base64_key_bruteforce_state& state) {
+#ifndef THE_GIANT_FIRST
+    return std::span{ state.key, state.key_index };
+#else
+    return std::span{ key  };
+#endif
+}
+
+// template<auto ciphertext>
+// constexpr static auto translate_plaintext_vigenere(base64_key_bruteforce_state& state, const std::size_t ciphertext_index, const char char_to_translate)
+// {
+//     const auto source_char_index = cipher::base64::DEFAULT_ASCII_TO_VALUE_ARRAY[static_cast<std::uint8_t>(ciphertext[ciphertext_index])];
+//     
+//     state.alloc();
+// }
+
+template<std::size_t max_key_size, auto plaintext_alphabet, auto ciphertext, auto key, auto heuristic, auto you_win, auto progress_report>
 constexpr static void bruteforce_key_vigenere(base64_key_bruteforce_state& state)
 {
     constexpr static auto get_next_char = [](base64_key_bruteforce_state& state, const std::size_t ciphertext_index, const auto& next) {
         const auto decode = [&](){
-            const auto source_char = static_cast<std::uint8_t>(ciphertext[ciphertext_index]);
-            const auto key_char = cipher::vigenere::key_character<false, false>(
-                std::span{ state.base64_plaintext, state.base64_plaintext_index },
+            const auto plain_char1 = cipher::vigenere::vigenere_one<false, false>(
                 std::span{ ciphertext },
-                std::span{ key },
-                ciphertext_index);
-            const auto index = cipher::vigenere::alphabet_index<false>(
+                std::span{ ciphertext },
+                get_first_key<key>(state),
+                std::span{ cipher::base64::DEFAULT_ALPHABET },
                 cipher::base64::DEFAULT_ASCII_TO_VALUE_ARRAY,
-                static_cast<std::uint8_t>(cipher::base64::DEFAULT_ALPHABET.size()),
-                source_char,
-                key_char);
-            const auto plain_giant_char = cipher::base64::DEFAULT_ALPHABET[index];
+                ciphertext_index);
 
-            const auto source_char2 = plain_giant_char;
-            const auto key_char2 = cipher::vigenere::key_character<false, false>(
+            const char temp[] = { plain_char1 };
+            const auto plain_char2 = cipher::vigenere::vigenere_one<false, false>(
                 std::span{ state.base64_plaintext, state.base64_plaintext_index },
-                std::span{ &source_char2, 1 },
-                std::span{ state.key, state.key_index },
-                ciphertext_index);
-            const auto index2 = cipher::vigenere::alphabet_index<false>(
+                std::span{ temp, 1 },
+                get_second_key<key>(state),
+                std::span{ cipher::base64::DEFAULT_ALPHABET },
                 cipher::base64::DEFAULT_ASCII_TO_VALUE_ARRAY,
-                static_cast<std::uint8_t>(cipher::base64::DEFAULT_ALPHABET.size()),
-                source_char2,
-                key_char2);
-            const auto c = cipher::base64::DEFAULT_ALPHABET[index2];
+                ciphertext_index);
+
             auto was_trying_before = state.trying_repeat;
             state.trying_repeat = true;
-            next(c);
+            next(plain_char2);
             if (!was_trying_before) {
                 state.trying_repeat = false;
-                next(c);
+                next(plain_char2);
             }
         };
-        if (!state.trying_repeat) {
+        if (!state.trying_repeat && state.key_index < max_key_size) {
             state.template new_char<plaintext_alphabet>(decode);
         } else {
             decode();
@@ -69,30 +86,35 @@ constexpr const auto key = cipher::buffer("TheGiant");
 
 thread_local std::uint64_t iteration{0};
 std::vector<base64_key_bruteforce_state> keys;
-static void bruteforce_key()
+static void bruteforce_key(const std::string_view plaintext)
 {
+    constexpr static const auto max_key_size = 11;
+
     constexpr static auto you_win = [](const auto& ) {
         // keys.push_back(state);
         // std::println("FOUND KEY: {:64} PLAINTEXT: {}", state.key_string_view(), state.plaintext_string_view());
     };
     constexpr static auto progress_report = [](const auto& state){
         if (iteration++ % 100000000 == 0) 
-            std::println(stderr, "KEY: {:24} PLAIN: {:64} ", state.key_string_view(), state.plaintext_string_view());
+            std::println(stderr, "KEY:\n{:24}\n\nPLAIN:\n{:64}\n", state.key_string_view(), state.plaintext_string_view());
     };
 
     constexpr static auto heuristic = [](const auto plain) {
         // constexpr static auto common_alphabet = cipher::alphabet::create("abcdefghijklmnopqrstuvwxyz");
-        // constexpr static auto common_alphabet = cipher::alphabet::create("ABCDEFGHIJKLMNOPQRTSUVWXYZabcdefghijklmnopqrstuvwxyz1234567890!.,:@()\"'/\n\r ");
+        constexpr static auto common_alphabet = cipher::alphabet::create("ABCDEFGHIJKLMNOPQRTSUVWXYZabcdefghijklmnopqrstuvwxyz1234567890!.,:@()\"'/\n\r ");
         // constexpr static auto common_alphabet = cipher::alphabet::create("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ \r\n");
         // constexpr static auto common_alphabet = cipher::alphabet::create("0123456789 ");
-        // return cipher::is_in_alphabet<common_alphabet>(plain);
-        return cipher::is_print(plain);
+        return cipher::is_in_alphabet<common_alphabet>(plain);
+        // return cipher::is_print(plain);
         // return cipher::is_common_print(plain);
     };
 
     auto state = base64_key_bruteforce_state{};
+    std::memcpy(state.key, plaintext.begin(), plaintext.size());
+    state.key_index = plaintext.size();
 
-    bruteforce_key_vigenere<cipher::base64::DEFAULT_ALPHABET,
+    bruteforce_key_vigenere<max_key_size,
+                            cipher::alphabet::create("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"),
                             ciphertext,
                             key,
                             heuristic,
@@ -107,8 +129,8 @@ static void bruteforce_key()
     std::println("done?");
 }
 
-int main(int, const char* [])
+int main(int, const char* argv[])
 {
-    bruteforce_key();
+    bruteforce_key(std::string_view{ argv[1] });
     return 0;
 }
