@@ -105,7 +105,7 @@ static void bruteforce_alphabet(const std::string_view plaintext)
     std::println("done?");
 }
 
-int main(int argc, const char* argv[])
+int main(int, const char* argv[])
 {
     bruteforce_alphabet(std::string_view{ argv[1] });
     return 0;

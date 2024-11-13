@@ -71,10 +71,11 @@ constexpr static void vigenere(const std::span<charT, ex1> target,
     }
     for(auto i = 0u; i < source.size(); i++) {
         const auto key_char = key_character<autokey, encode>(target, source, key, i);
-        const auto source_char = source[i];
-        const auto& row = vigenere_table[ascii_to_index[static_cast<std::uint8_t>(source_char)]];
+        const auto key_char_index = static_cast<std::uint8_t>(key_char);
+        const auto source_char_index = static_cast<std::uint8_t>(source[i]);
 
-        target[i] = static_cast<charT>(row[ascii_to_index[static_cast<std::uint8_t>(key_char)]]);
+        const auto& row = vigenere_table[ascii_to_index[source_char_index]];
+        target[i] = static_cast<charT>(row[ascii_to_index[key_char_index]]);
     }
 }
 
@@ -105,7 +106,7 @@ constexpr static void decode(const std::span<charT, ex1> plaintext,
 template<bool encode, typename charT1, typename charT2>
 constexpr static std::uint8_t
 alphabet_index(const alphabet::ascii_to_index_t& ascii_to_index,
-               const std::uint8_t alphabet_length,
+               const std::size_t alphabet_length,
                const charT1 source_char,
                const charT2 key_char)
 {
@@ -116,7 +117,7 @@ alphabet_index(const alphabet::ascii_to_index_t& ascii_to_index,
         return (ascii_to_index[source] + ascii_to_index[key]) % alphabet_length;
 
     if (ascii_to_index[source] < ascii_to_index[key])
-        return (alphabet_length - ascii_to_index[key] + ascii_to_index[source]);
+        return static_cast<std::uint8_t>(alphabet_length - ascii_to_index[key] + ascii_to_index[source]);
 
     return (ascii_to_index[source] - ascii_to_index[key]) % alphabet_length;
 }
@@ -152,7 +153,7 @@ constexpr static void vigenere(const std::span<charT, ex1> target,
     for(auto i = 0u; i < source.size(); i++) {
         const auto source_char = static_cast<std::uint8_t>(source[i]);
         const auto key_char = key_character<autokey, encode>(target, source, key, i);
-        const auto index = alphabet_index<encode>(ascii_to_index, static_cast<std::uint8_t>(alphabet.size()), source_char, key_char);
+        const auto index = alphabet_index<encode>(ascii_to_index, alphabet.size(), source_char, key_char);
 
         target[i] = static_cast<charT>(alphabet[index]);
     }

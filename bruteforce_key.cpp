@@ -13,14 +13,16 @@
 using namespace cipher::bruteforce;
 
 #define THE_GIANT_FIRST_DECODE 1
-template<auto key> constexpr static auto get_first_key(const base64_key_bruteforce_state& state) {
+template<auto key>
+constexpr static auto get_first_key([[maybe_unused]] const base64_key_bruteforce_state& state) {
 #ifdef THE_GIANT_FIRST_DECODE
     return std::span{ state.key, state.key_index };
 #else
     return std::span{ key };
 #endif
 }
-template<auto key> constexpr static auto get_second_key(const base64_key_bruteforce_state& state) {
+template<auto key>
+constexpr static auto get_second_key([[maybe_unused]] const base64_key_bruteforce_state& state) {
 #ifndef THE_GIANT_FIRST_DECODE
     return std::span{ state.key, state.key_index };
 #else
@@ -57,7 +59,7 @@ constexpr static auto translate_plaintext_double_vigenere(base64_key_bruteforce_
     state.alloc(alphabet[key_char_index]);
 }
 
-template<std::size_t max_key_size, auto plaintext_alphabet, auto ciphertext, auto key, auto heuristic, auto you_win, auto progress_report>
+template<std::size_t max_key_size, auto key_alphabet, auto ciphertext, auto key, auto heuristic, auto you_win, auto progress_report>
 constexpr static void bruteforce_key_vigenere(base64_key_bruteforce_state& state)
 {
     constexpr static auto get_next_char = [](base64_key_bruteforce_state& state, const std::size_t ciphertext_index, const auto& next) {
@@ -88,7 +90,7 @@ constexpr static void bruteforce_key_vigenere(base64_key_bruteforce_state& state
             }
         };
         if (!state.trying_repeat && state.key_index < max_key_size) {
-            state.template new_char<plaintext_alphabet>(decode);
+            state.template new_char<key_alphabet>(decode);
         } else {
             decode();
         }
@@ -97,8 +99,6 @@ constexpr static void bruteforce_key_vigenere(base64_key_bruteforce_state& state
     bruteforce_base64<base64_key_bruteforce_state, ciphertext, get_next_char, heuristic, you_win, progress_report>(state);
 }
 
-// constexpr static const auto ciphertext = cipher::buffer(
-//     "OkEeZHnifuMdYB1IbHyAfb0g2FJzrVmfkKcSbKrpQGvhQ0/bvu76RdnGy/WtT7T3");
 constexpr static const auto ciphertext = cipher::buffer(
     "kCmlgFi6GuJNgkNI1Q41fbfyLoCFTCvlqkZiI0KIAXAzP1U1uy1BE4U"
     "fPBfpKmmLObjYnQNRBaPtKiVWzc5A4v0w3xIe8FOhAGJZ7g4in0wn"
@@ -112,13 +112,13 @@ static void bruteforce_key(const std::string_view plaintext)
 {
     constexpr static const auto max_key_size = 11;
 
-    constexpr static auto you_win = [](const auto& ) {
-        // keys.push_back(state);
-        // std::println("FOUND KEY: {:64} PLAINTEXT: {}", state.key_string_view(), state.plaintext_string_view());
+    constexpr static auto you_win = [](const auto& state) {
+        keys.push_back(state);
+        std::println("FOUND KEY: {:64} PLAINTEXT: \n{}", state.key_string_view(), state.plaintext_string_view());
     };
     constexpr static auto progress_report = [](const auto& state){
         if (iteration++ % 100000000 == 0) 
-            std::println(stderr, "KEY:\n{:24}\n\nPLAIN:\n{:64}\n", state.key_string_view(), state.plaintext_string_view());
+            std::println(stderr, "KEY: {:24} PLAIN:\n{:64}", state.key_string_view(), state.plaintext_string_view());
     };
 
     constexpr static auto heuristic = [](const auto plain) {
@@ -131,6 +131,8 @@ static void bruteforce_key(const std::string_view plaintext)
         // return cipher::is_common_print(plain);
     };
 
+    constexpr static auto key_alphabet = cipher::alphabet::create("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+
     // auto state = base64_key_bruteforce_state{};
     // std::memcpy(state.key, plaintext.begin(), plaintext.size());
     // state.key_index = plaintext.size();
@@ -138,17 +140,16 @@ static void bruteforce_key(const std::string_view plaintext)
     auto state = create_state_with_plaintext<base64_key_bruteforce_state, translate_plaintext_double_vigenere<ciphertext, key>>(plaintext);
 
     bruteforce_key_vigenere<max_key_size,
-                            cipher::alphabet::create("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"),
+                            key_alphabet,
                             ciphertext,
                             key,
                             heuristic,
                             you_win,
                             progress_report>(state);
 
-    for(const auto& key : keys) {
+    for(const auto& key : keys)
         std::println(stderr, 
-                     "FOUND PLAIN: {:64} KEY: {}", key.plaintext_string_view(), key.key_string_view());
-    }
+                     "FOUND PLAIN:\n{}\nKEY: {}", key.plaintext_string_view(), key.key_string_view());
 
     std::println("done?");
 }
