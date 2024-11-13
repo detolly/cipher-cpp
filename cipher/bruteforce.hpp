@@ -113,6 +113,48 @@ struct base64_alphabet_bruteforce_state
     }
 };
 
+struct base64_key_bruteforce_state
+{
+    bool trying_repeat{ false };
+    std::size_t plaintext_index{ 0 };
+    std::size_t base64_plaintext_index{ 0 };
+    std::size_t ciphertext_index{ 0 };
+    std::size_t key_index{ 0 };
+    char key[256]{ 0 };
+    char plaintext[256]{ 0 };
+    char base64_plaintext[256]{ 0 };
+
+    constexpr std::string_view plaintext_string_view() const
+    {
+        return std::string_view{ plaintext, plaintext_index };
+    }
+
+    constexpr std::string_view key_string_view() const
+    {
+        return std::string_view{ key, key_index };
+    }
+
+    constexpr void alloc(const char c)
+    {
+        key[key_index++] = c;
+    }
+
+    constexpr void dealloc()
+    {
+        key[key_index--] = 0;
+    }
+
+    template<auto alphabet, auto then>
+    constexpr void new_char()
+    {
+        for(const char c : alphabet) {
+            alloc(c);
+            then(*this);
+            dealloc();
+        }
+    }
+};
+
 template<typename StateT, auto translate_and_alloc>
 constexpr static StateT create_state_with_plaintext(const std::string_view plaintext)
 {
@@ -158,48 +200,6 @@ constexpr static StateT create_state_with_plaintext(const std::string_view plain
 
     return a;
 }
-
-struct base64_key_bruteforce_state
-{
-    bool trying_repeat{ false };
-    std::size_t plaintext_index{ 0 };
-    std::size_t base64_plaintext_index{ 0 };
-    std::size_t ciphertext_index{ 0 };
-    std::size_t key_index{ 0 };
-    char key[256]{ 0 };
-    char plaintext[256]{ 0 };
-    char base64_plaintext[256]{ 0 };
-
-    constexpr std::string_view plaintext_string_view() const
-    {
-        return std::string_view{ plaintext, plaintext_index };
-    }
-
-    constexpr std::string_view key_string_view() const
-    {
-        return std::string_view{ key, key_index };
-    }
-
-    constexpr void alloc(const char c)
-    {
-        key[key_index++] = c;
-    }
-
-    constexpr void dealloc()
-    {
-        key[key_index--] = 0;
-    }
-
-    template<auto alphabet>
-    constexpr void new_char(const auto& then)
-    {
-        for(const char c : alphabet) {
-            alloc(c);
-            then();
-            dealloc();
-        }
-    }
-};
 
 template<typename StateT, auto ciphertext, auto get_next_char, auto heuristic, auto you_win, auto progress_report>
 constexpr static void base64_decode_fourth_char(StateT& state, const char plain_base64_char){

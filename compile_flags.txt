@@ -4,4 +4,3 @@
 -Wpedantic
 -Wconversion
 -I.
--fconstexpr-steps=1000000000

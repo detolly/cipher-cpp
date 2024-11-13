@@ -81,11 +81,11 @@ static void bruteforce_alphabet(const std::string_view plaintext)
             std::println(stderr, "ALPHABET: {} PLAIN: \n{:64} ", state.alphabet_string_view(), state.plaintext_string_view());
     };
 
+    // constexpr static auto common_alphabet = cipher::alphabet::create("abcdefghijklmnopqrstuvwxyz");
+    // constexpr static auto common_alphabet = cipher::alphabet::create("ABCDEFGHIJKLMNOPQRTSUVWXYZabcdefghijklmnopqrstuvwxyz1234567890!.,:@()\"'/\n\r ");
+    // constexpr static auto common_alphabet = cipher::alphabet::create("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+    // constexpr static auto common_alphabet = cipher::alphabet::create("0123456789 ");
     constexpr static auto heuristic = [](const auto plain) {
-        // constexpr static auto common_alphabet = cipher::alphabet::create("abcdefghijklmnopqrstuvwxyz");
-        // constexpr static auto common_alphabet = cipher::alphabet::create("ABCDEFGHIJKLMNOPQRTSUVWXYZabcdefghijklmnopqrstuvwxyz1234567890!.,:@()\"'/\n\r ");
-        // constexpr static auto common_alphabet = cipher::alphabet::create("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
-        // constexpr static auto common_alphabet = cipher::alphabet::create("0123456789 ");
         // return cipher::is_in_alphabet<common_alphabet>(plain);
         return cipher::is_print(plain);
         // return cipher::is_common_print(plain);

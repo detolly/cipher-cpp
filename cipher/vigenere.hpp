@@ -67,15 +67,15 @@ constexpr static void vigenere(const std::span<charT, ex1> target,
                                const alphabet::ascii_to_index_t& ascii_to_index)
 {
     if consteval {
-        static_assert(source.size() == target.size());
+        static_assert(target.size() >= source.size());
     }
     for(auto i = 0u; i < source.size(); i++) {
         const auto key_char = key_character<autokey, encode>(target, source, key, i);
-        const auto key_char_index = static_cast<std::uint8_t>(key_char);
-        const auto source_char_index = static_cast<std::uint8_t>(source[i]);
+        const auto key_char_as_index = static_cast<std::uint8_t>(key_char);
+        const auto source_char_as_index = static_cast<std::uint8_t>(source[i]);
 
-        const auto& row = vigenere_table[ascii_to_index[source_char_index]];
-        target[i] = static_cast<charT>(row[ascii_to_index[key_char_index]]);
+        const auto& row = vigenere_table[ascii_to_index[source_char_as_index]];
+        target[i] = static_cast<charT>(row[ascii_to_index[key_char_as_index]]);
     }
 }
 
@@ -120,23 +120,6 @@ alphabet_index(const alphabet::ascii_to_index_t& ascii_to_index,
         return static_cast<std::uint8_t>(alphabet_length - ascii_to_index[key] + ascii_to_index[source]);
 
     return (ascii_to_index[source] - ascii_to_index[key]) % alphabet_length;
-}
-
-template<bool autokey, bool encode,
-         typename charT, typename charT2, typename charT3, typename charT4,
-         std::size_t ex1, std::size_t ex2, std::size_t ex3, std::size_t ex4>
-constexpr static charT vigenere_one(const std::span<charT, ex1> target,
-                                    const std::span<charT2, ex2> source,
-                                    const std::span<charT3, ex3> key,
-                                    const std::span<charT4, ex4> alphabet,
-                                    const alphabet::ascii_to_index_t& ascii_to_index,
-                                    const std::size_t index)
-{
-    const auto source_char = static_cast<std::uint8_t>(source[index]);
-    const auto key_char = key_character<autokey, encode>(target, source, key, index);
-    const auto alphabet_i = alphabet_index<encode>(ascii_to_index, static_cast<std::uint8_t>(alphabet.size()), source_char, key_char);
-
-    return static_cast<charT>(alphabet[alphabet_i]);
 }
 
 template<bool autokey, bool encode,
