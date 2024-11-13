@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstring>
 #include <print>
+#include <utility>
 #include <vector>
 
 #include <cipher/alphabet.hpp>
@@ -11,29 +12,50 @@
 
 using namespace cipher::bruteforce;
 
-#define THE_GIANT_FIRST 1
+#define THE_GIANT_FIRST_DECODE 1
 template<auto key> constexpr static auto get_first_key(const base64_key_bruteforce_state& state) {
-#ifdef THE_GIANT_FIRST
+#ifdef THE_GIANT_FIRST_DECODE
     return std::span{ state.key, state.key_index };
 #else
     return std::span{ key };
 #endif
 }
 template<auto key> constexpr static auto get_second_key(const base64_key_bruteforce_state& state) {
-#ifndef THE_GIANT_FIRST
+#ifndef THE_GIANT_FIRST_DECODE
     return std::span{ state.key, state.key_index };
 #else
     return std::span{ key  };
 #endif
 }
 
-// template<auto ciphertext>
-// constexpr static auto translate_plaintext_vigenere(base64_key_bruteforce_state& state, const std::size_t ciphertext_index, const char char_to_translate)
-// {
-//     const auto source_char_index = cipher::base64::DEFAULT_ASCII_TO_VALUE_ARRAY[static_cast<std::uint8_t>(ciphertext[ciphertext_index])];
-//     
-//     state.alloc();
-// }
+template<auto ciphertext, auto key>
+constexpr static auto translate_plaintext_double_vigenere(base64_key_bruteforce_state& state, const std::size_t ciphertext_index, const char char_to_translate)
+{
+    constexpr static auto table = cipher::vigenere::create_table(cipher::base64::DEFAULT_ALPHABET);
+    constexpr static auto atv = cipher::base64::DEFAULT_ASCII_TO_VALUE_ARRAY;
+    constexpr static auto alphabet = cipher::base64::DEFAULT_ALPHABET;
+
+    constexpr static auto find_index = [](const std::uint8_t row_index, const char looking_for) {
+        for(auto i = 0u; i < table.size(); i++)
+            if (table[row_index][i] == looking_for)
+                return i;
+        std::unreachable();
+    };
+
+    const auto the_giant_key_char = key[ciphertext_index % key.size()];
+    const auto the_giant_key_char_index = atv[static_cast<std::uint8_t>(the_giant_key_char)];
+    const auto char_to_translate_index = atv[static_cast<std::uint8_t>(char_to_translate)];
+
+#ifdef THE_GIANT_FIRST_DECODE
+    const auto source_char_index = find_index(the_giant_key_char_index, ciphertext[ciphertext_index]);
+    const auto key_char_index = find_index(char_to_translate_index, alphabet[source_char_index]);
+#else
+    const auto source_char = table[the_giant_key_char_index][char_to_translate_index];
+    const auto source_char_index = atv[static_cast<std::uint8_t>(source_char)];
+    const auto key_char_index = find_index(source_char_index, ciphertext[ciphertext_index]);
+#endif
+    state.alloc(alphabet[key_char_index]);
+}
 
 template<std::size_t max_key_size, auto plaintext_alphabet, auto ciphertext, auto key, auto heuristic, auto you_win, auto progress_report>
 constexpr static void bruteforce_key_vigenere(base64_key_bruteforce_state& state)
@@ -109,9 +131,11 @@ static void bruteforce_key(const std::string_view plaintext)
         // return cipher::is_common_print(plain);
     };
 
-    auto state = base64_key_bruteforce_state{};
-    std::memcpy(state.key, plaintext.begin(), plaintext.size());
-    state.key_index = plaintext.size();
+    // auto state = base64_key_bruteforce_state{};
+    // std::memcpy(state.key, plaintext.begin(), plaintext.size());
+    // state.key_index = plaintext.size();
+
+    auto state = create_state_with_plaintext<base64_key_bruteforce_state, translate_plaintext_double_vigenere<ciphertext, key>>(plaintext);
 
     bruteforce_key_vigenere<max_key_size,
                             cipher::alphabet::create("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"),

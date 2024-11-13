@@ -42,9 +42,9 @@ template<bool autokey, bool encode,
          typename charT, typename charT2, typename charT3,
          std::size_t ex1, std::size_t ex2, std::size_t ex3>
 constexpr static auto key_character(const std::span<charT, ex1> target,
-                                            const std::span<charT2, ex2> source,
-                                            const std::span<charT3, ex3> key,
-                                            const std::size_t index)
+                                    const std::span<charT2, ex2> source,
+                                    const std::span<charT3, ex3> key,
+                                    const std::size_t index)
 {
     if constexpr (autokey) {
         if (index < key.size())
