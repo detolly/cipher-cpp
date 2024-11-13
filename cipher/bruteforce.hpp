@@ -202,6 +202,87 @@ struct base64_key_bruteforce_state
 };
 
 template<typename StateT, auto ciphertext, auto get_next_char, auto heuristic, auto you_win, auto progress_report>
+constexpr static void base64_decode_fourth_char(StateT& state, const char plain_base64_char){
+    auto& third_char = state.plaintext[state.plaintext_index + 2];
+    const auto value = cipher::index_in_alphabet<cipher::base64::DEFAULT_ALPHABET>(plain_base64_char);
+    const auto old_value = third_char;
+
+    state.base64_plaintext[state.base64_plaintext_index + 3] = plain_base64_char;
+    third_char = static_cast<char>(old_value + value);
+    if (heuristic(third_char)) {
+        state.plaintext_index += 3;
+        state.ciphertext_index += 1;
+        state.base64_plaintext_index += 4;
+        bruteforce_base64<StateT, ciphertext, get_next_char, heuristic, you_win, progress_report>(state);
+        state.plaintext_index -= 3;
+        state.ciphertext_index -= 1;
+        state.base64_plaintext_index -= 4;
+    }
+
+    state.base64_plaintext[state.base64_plaintext_index + 3] = 0;
+    third_char = old_value;
+};
+
+template<typename StateT, auto ciphertext, auto get_next_char, auto heuristic, auto you_win, auto progress_report>
+constexpr static void base64_decode_third_char(StateT& state, const char plain_base64_char){
+    auto& second_char = state.plaintext[state.plaintext_index + 1];
+    auto& third_char = state.plaintext[state.plaintext_index + 2];
+    const auto value = cipher::index_in_alphabet<cipher::base64::DEFAULT_ALPHABET>(plain_base64_char);
+    const auto old_value = second_char;
+
+    state.base64_plaintext[state.base64_plaintext_index + 2] = plain_base64_char;
+    second_char = static_cast<char>(old_value + ((value & 0x3c) >> 2));
+    third_char = static_cast<char>((value & 0x03) << 6);
+    if ((third_char & (1 << 7)) == 0 && heuristic(second_char)) {
+        state.ciphertext_index += 1;
+        get_next_char.template operator()<base64_decode_fourth_char<StateT, ciphertext, get_next_char, heuristic, you_win, progress_report>>(state);
+        state.ciphertext_index -= 1;
+    }
+
+    state.base64_plaintext[state.base64_plaintext_index + 2] = 0;
+    second_char = old_value;
+    third_char = 0;
+};
+
+template<typename StateT, auto ciphertext, auto get_next_char, auto heuristic, auto you_win, auto progress_report>
+constexpr static void base64_decode_second_char(StateT& state, const char plain_base64_char){
+    auto& first_char = state.plaintext[state.plaintext_index + 0];
+    auto& second_char = state.plaintext[state.plaintext_index + 1];
+    const auto value = cipher::index_in_alphabet<cipher::base64::DEFAULT_ALPHABET>(plain_base64_char);
+    const auto old_value = first_char;
+
+    state.base64_plaintext[state.base64_plaintext_index + 1] = plain_base64_char;
+    first_char = static_cast<char>(old_value + ((value & 0x30) >> 4));
+    second_char = static_cast<char>((value & 0x0f) << 4);
+    if ((second_char & (1 << 7)) == 0 && heuristic(first_char)) {
+        state.ciphertext_index += 1;
+        get_next_char.template operator()<base64_decode_third_char<StateT, ciphertext, get_next_char, heuristic, you_win, progress_report>>(state);
+        state.ciphertext_index -= 1;
+    }
+
+    state.base64_plaintext[state.base64_plaintext_index + 1] = 0;
+    first_char = old_value;
+    second_char = 0;
+};
+
+template<typename StateT, auto ciphertext, auto get_next_char, auto heuristic, auto you_win, auto progress_report>
+constexpr static void base64_decode_first_char(StateT& state, const char plain_base64_char){
+    auto& first_char = state.plaintext[state.plaintext_index + 0];
+    const auto value = cipher::index_in_alphabet<cipher::base64::DEFAULT_ALPHABET>(plain_base64_char);
+
+    state.base64_plaintext[state.base64_plaintext_index] = plain_base64_char;
+    first_char = static_cast<char>(value << 2);
+    if (cipher::is_print(first_char)) {
+        state.ciphertext_index += 1;
+        get_next_char.template operator()<base64_decode_second_char<StateT, ciphertext, get_next_char, heuristic, you_win, progress_report>>(state);
+        state.ciphertext_index -= 1;
+    }
+
+    state.base64_plaintext[state.base64_plaintext_index] = 0;
+    first_char = 0;
+};
+
+template<typename StateT, auto ciphertext, auto get_next_char, auto heuristic, auto you_win, auto progress_report>
 constexpr static void bruteforce_base64(StateT& state)
 {
     progress_report(state);
@@ -211,75 +292,7 @@ constexpr static void bruteforce_base64(StateT& state)
         return;
     }
 
-    const auto base64_decode_fourth_char = [&state](const char plain_base64_char){
-        auto& third_char = state.plaintext[state.plaintext_index + 2];
-        const auto value = cipher::index_in_alphabet<cipher::base64::DEFAULT_ALPHABET>(plain_base64_char);
-        const auto old_value = third_char;
-
-        state.base64_plaintext[state.base64_plaintext_index + 3] = plain_base64_char;
-        third_char = static_cast<char>(old_value + value);
-        if (heuristic(third_char)) {
-            state.plaintext_index += 3;
-            state.ciphertext_index += 4;
-            state.base64_plaintext_index += 4;
-            bruteforce_base64<StateT, ciphertext, get_next_char, heuristic, you_win, progress_report>(state);
-            state.plaintext_index -= 3;
-            state.ciphertext_index -= 4;
-            state.base64_plaintext_index -= 4;
-        }
-
-        state.base64_plaintext[state.base64_plaintext_index + 3] = 0;
-        third_char = old_value;
-    };
-
-    const auto base64_decode_third_char = [&state, base64_decode_fourth_char](const char plain_base64_char){
-        auto& second_char = state.plaintext[state.plaintext_index + 1];
-        auto& third_char = state.plaintext[state.plaintext_index + 2];
-        const auto value = cipher::index_in_alphabet<cipher::base64::DEFAULT_ALPHABET>(plain_base64_char);
-        const auto old_value = second_char;
-
-        state.base64_plaintext[state.base64_plaintext_index + 2] = plain_base64_char;
-        second_char = static_cast<char>(old_value + ((value & 0x3c) >> 2));
-        third_char = static_cast<char>((value & 0x03) << 6);
-        if ((third_char & (1 << 7)) == 0 && heuristic(second_char))
-            get_next_char(state, state.ciphertext_index + 3, base64_decode_fourth_char);
-
-        state.base64_plaintext[state.base64_plaintext_index + 2] = 0;
-        second_char = old_value;
-        third_char = 0;
-    };
-
-    const auto base64_decode_second_char = [&state, base64_decode_third_char](const char plain_base64_char){
-        auto& first_char = state.plaintext[state.plaintext_index + 0];
-        auto& second_char = state.plaintext[state.plaintext_index + 1];
-        const auto value = cipher::index_in_alphabet<cipher::base64::DEFAULT_ALPHABET>(plain_base64_char);
-        const auto old_value = first_char;
-
-        state.base64_plaintext[state.base64_plaintext_index + 1] = plain_base64_char;
-        first_char = static_cast<char>(old_value + ((value & 0x30) >> 4));
-        second_char = static_cast<char>((value & 0x0f) << 4);
-        if ((second_char & (1 << 7)) == 0 && heuristic(first_char))
-            get_next_char(state, state.ciphertext_index + 2, base64_decode_third_char);
-
-        state.base64_plaintext[state.base64_plaintext_index + 1] = 0;
-        first_char = old_value;
-        second_char = 0;
-    };
-
-    const auto base64_decode_first_char = [&state, base64_decode_second_char](const char plain_base64_char){
-        auto& first_char = state.plaintext[state.plaintext_index + 0];
-        const auto value = cipher::index_in_alphabet<cipher::base64::DEFAULT_ALPHABET>(plain_base64_char);
-
-        state.base64_plaintext[state.base64_plaintext_index] = plain_base64_char;
-        first_char = static_cast<char>(value << 2);
-        if (cipher::is_print(first_char))
-            get_next_char(state, state.ciphertext_index + 1, base64_decode_second_char);
-
-        state.base64_plaintext[state.base64_plaintext_index] = 0;
-        first_char = 0;
-    };
-
-    get_next_char(state, state.ciphertext_index, base64_decode_first_char);
+    get_next_char.template operator()<base64_decode_first_char<StateT, ciphertext, get_next_char, heuristic, you_win, progress_report>>(state);
 }
 
 }

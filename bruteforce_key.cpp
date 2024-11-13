@@ -62,7 +62,7 @@ constexpr static auto translate_plaintext_double_vigenere(base64_key_bruteforce_
 template<std::size_t max_key_size, auto key_alphabet, auto ciphertext, auto key, auto heuristic, auto you_win, auto progress_report>
 constexpr static void bruteforce_key_vigenere(base64_key_bruteforce_state& state)
 {
-    constexpr static auto get_next_char = [](base64_key_bruteforce_state& state, const std::size_t ciphertext_index, const auto& next) {
+    constexpr static auto get_next_char = []<auto next>(base64_key_bruteforce_state& state) {
         const auto decode = [&](){
             const auto plain_char1 = cipher::vigenere::vigenere_one<false, false>(
                 std::span{ ciphertext },
@@ -70,7 +70,7 @@ constexpr static void bruteforce_key_vigenere(base64_key_bruteforce_state& state
                 get_first_key<key>(state),
                 std::span{ cipher::base64::DEFAULT_ALPHABET },
                 cipher::base64::DEFAULT_ASCII_TO_VALUE_ARRAY,
-                ciphertext_index);
+                state.ciphertext_index);
 
             const char temp[] = { plain_char1 };
             const auto plain_char2 = cipher::vigenere::vigenere_one<false, false>(
@@ -79,14 +79,14 @@ constexpr static void bruteforce_key_vigenere(base64_key_bruteforce_state& state
                 get_second_key<key>(state),
                 std::span{ cipher::base64::DEFAULT_ALPHABET },
                 cipher::base64::DEFAULT_ASCII_TO_VALUE_ARRAY,
-                ciphertext_index);
+                state.ciphertext_index);
 
             auto was_trying_before = state.trying_repeat;
             state.trying_repeat = true;
-            next(plain_char2);
+            next(state, plain_char2);
             if (!was_trying_before) {
                 state.trying_repeat = false;
-                next(plain_char2);
+                next(state, plain_char2);
             }
         };
         if (!state.trying_repeat && state.key_index < max_key_size) {

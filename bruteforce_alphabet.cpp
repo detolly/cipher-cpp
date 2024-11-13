@@ -13,9 +13,9 @@ using namespace cipher::bruteforce;
 template<auto plaintext_alphabet, auto ciphertext, auto key, auto heuristic, auto you_win, auto progress_report>
 constexpr static void bruteforce_alphabet_vigenere(base64_alphabet_bruteforce_state& state)
 {
-    constexpr static auto get_next_char = [](base64_alphabet_bruteforce_state& state, const std::size_t ciphertext_index, const auto& next) {
-        const auto source_char = ciphertext[ciphertext_index];
-        const auto key_char = key[(ciphertext_index) % key.size()];
+    constexpr static auto get_next_char = []<auto next>(base64_alphabet_bruteforce_state& state) {
+        const auto source_char = ciphertext[state.ciphertext_index];
+        const auto key_char = key[(state.ciphertext_index) % key.size()];
         state.alloc_at_all_index(key_char, [&](const char key_char) {
             state.alloc_at_all_index(source_char, [&](const char source_char) {
                 const auto index = cipher::vigenere::alphabet_index<false>(
@@ -26,13 +26,13 @@ constexpr static void bruteforce_alphabet_vigenere(base64_alphabet_bruteforce_st
                 state.template alloc_all_char_at_index<plaintext_alphabet>(
                     index, 
                     [&](const char c){
-                        next(c);
+                        next(state, c);
                     });
             });
         });
     };
 
-    bruteforce_base64<ciphertext, get_next_char, heuristic, you_win, progress_report>(state);
+    bruteforce_base64<base64_alphabet_bruteforce_state, ciphertext, get_next_char, heuristic, you_win, progress_report>(state);
 }
 
 template<auto ciphertext>
@@ -46,13 +46,13 @@ constexpr static auto translate_plaintext_substitution(base64_alphabet_bruteforc
 template<auto ciphertext, auto heuristic, auto you_win, auto progress_report>
 constexpr static void bruteforce_alphabet_substitution(base64_alphabet_bruteforce_state& state)
 {
-    constexpr static auto get_next_char = [](base64_alphabet_bruteforce_state& state, const std::size_t ciphertext_index, const auto& next) {
-        const auto cipher_char = ciphertext[ciphertext_index];
+    constexpr static auto get_next_char = []<auto next>(base64_alphabet_bruteforce_state& state) {
+        const auto cipher_char = ciphertext[state.ciphertext_index];
         const auto cipher_index = cipher::index_in_alphabet<cipher::base64::DEFAULT_ALPHABET>(cipher_char);
         state.template alloc_all_char_at_index<cipher::base64::DEFAULT_ALPHABET>(
             cipher_index ,
             [&](const char c){
-                next(c);
+                next(state, c);
             });
     };
 
