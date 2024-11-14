@@ -1,7 +1,6 @@
 #include <cstdio>
 #include <cstring>
 #include <print>
-#include <utility>
 #include <vector>
 
 #include <cipher/alphabet.hpp>
@@ -38,12 +37,14 @@ constexpr static void bruteforce_key_vigenere(base64_key_bruteforce_state& state
 
             next(state, source_char);
         };
-        if (state.key_index < max_key_size && !state.trying_repeat) {
+        if (state.key_index < max_key_size && !state.trying_repeat && state.key_index < ciphertext.size()) {
             state.template new_char<key_alphabet, decode>();
-            const auto trying_repeat = state.trying_repeat;
-            state.trying_repeat = true;
-            decode(state);
-            state.trying_repeat = trying_repeat;
+            if (state.key_index != 0) {
+                const auto trying_repeat = state.trying_repeat;
+                state.trying_repeat = true;
+                decode(state);
+                state.trying_repeat = trying_repeat;
+            }
         } else {
             decode(state);
         }
@@ -52,13 +53,14 @@ constexpr static void bruteforce_key_vigenere(base64_key_bruteforce_state& state
     bruteforce_base64<base64_key_bruteforce_state, ciphertext, get_next_char, heuristic, you_win, progress_report>(state);
 }
 
-constexpr static const auto ciphertext = cipher::buffer("iW9cXmzO");
+constexpr static const auto ciphertext = cipher::buffer(
+    "iW9cXmzOU7ZuZBtW40b3ngK2icE75R0V");
 
 thread_local std::uint64_t iteration{0};
 std::vector<base64_key_bruteforce_state> keys;
 static void bruteforce_key(const std::string_view plaintext)
 {
-    constexpr static const auto max_key_size = 8;
+    constexpr static const auto max_key_size = 11;
 
     constexpr static auto you_win = [](const auto& state) {
         keys.push_back(state);
@@ -71,7 +73,8 @@ static void bruteforce_key(const std::string_view plaintext)
 
     // constexpr static auto common_alphabet = cipher::alphabet::create("abcdefghijklmnopqrstuvwxyz");
     // constexpr static auto common_alphabet = cipher::alphabet::create("ABCDEFGHIJKLMNOPQRTSUVWXYZabcdefghijklmnopqrstuvwxyz1234567890!.,:@()\"'/\n\r\t ");
-    constexpr static auto common_alphabet = cipher::alphabet::create("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ \r\n0123456789");
+    // constexpr static auto common_alphabet = cipher::alphabet::create("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ \r\n0123456789");
+    constexpr static auto common_alphabet = cipher::alphabet::create("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ");
     // constexpr static auto common_alphabet = cipher::alphabet::create("0123456789 ");
     constexpr static auto heuristic = [](const auto plain) {
         return cipher::is_in_alphabet<common_alphabet>(plain);
@@ -79,8 +82,7 @@ static void bruteforce_key(const std::string_view plaintext)
         // return cipher::is_common_print(plain);
     };
 
-    // constexpr static auto key_alphabet = cipher::alphabet::create("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
-    constexpr static auto key_alphabet = cipher::alphabet::create("OPRXQUWSTX");
+    constexpr static auto key_alphabet = cipher::alphabet::create("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
     // constexpr static auto key_alphabet = cipher::base64::DEFAULT_ALPHABET;
 
     (void)plaintext;
