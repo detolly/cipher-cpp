@@ -25,7 +25,7 @@ NUY9+Ebq0UAvXUviVyHVIeU0EuQkdxjaKhrtAmZ5UotEdvmi0yi89AjPOQ8LRlTS4J8kJvRSmCzkvZ5 
 oQLf50bCXcwltIR/j70FENcaQLnUIgDO8ExtARtpnj9h38HzGYReNXaRkFQuY4XeDnTEPfh40I4/vYd KY4i        4       83
 yxR/8vLAqpxM6326n4MHAC7Szx0Ar7P3cqTek8z6dOiG69MpcSa5WWd0GXeqrXx1FNs06TvSHHt7ACf            0        79
 UEeqKjFO5yLbcgNeayWPXh0rmJahEJtfZEmgki7YNpud6vbT5au1h1MxsaoxbizE7heQF7MH1kswbSZ Kj          2       81
-La/s8qMsB                                                                                   9       88
+La/s8qMsB                                                                                   9       09
 
 OPRX
 PQUW
@@ -33,8 +33,24 @@ QSSR
 ROQQ
 RPPT
 ORRO
-SOQX
-                           F (79 + -9)
+SOQ(X)
+
+http://www.wd8das.net/RadioCodes.pdf
+
+    OPR (Operator)
+    X (?)
+    PQ (End of message)
+    U (You)
+    W (Go on / Word / Unable to read / Your signals are too weak / "Repeated")
+    QSS (Are my signals fading / Your signals are fading)
+    RR (Repeat)
+    O
+    QQR (Transmit for me)
+    PP (Preparative)
+    TO (Addressee)
+    RR
+    OS (Colon)
+    OQ (?)
 
           iW9cXmzOU7ZuZBtW40b3ngK2icE75R0Vb7HvniQd7aCAh5aQRum8gp91EzIDtgySXvGUQxAn3gOM2gr    0        79
         B piLf3QjdfBwjLForeHhqEX59HyOVq9vos22eBNP3ouDrTTNZpwHZPeJDGVt1oauYa+pgDuG7FzHdHFq     1       80
