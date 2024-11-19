@@ -1,11 +1,12 @@
 
-#include "cipher/alphabet.hpp"
 #include <print>
+#include <iostream>
 
 #include <argparse.hpp>
 
-#include <cipher/substitution.hpp>
+#include <cipher/alphabet.hpp>
 #include <cipher/base64.hpp>
+#include <cipher/substitution.hpp>
 
 int main(int argc, const char* argv[])
 {
@@ -27,16 +28,21 @@ int main(int argc, const char* argv[])
     }
 
     const auto debug = parser.get<bool>("--debug");
-    const auto source = parser.get<std::string>("source");
+    auto source = parser.get<std::string>("source");
     if (debug)
         std::println(stderr, "SOURCE: _{}_", source);
+
+    if (source == "-") {
+        source.clear();
+        std::cin >> source;
+    }
+
+    std::string target;
+    target.resize(source.length());
 
     const auto decode = parser.get<bool>("--decode");
     if (debug)
         std::println(stderr, "DECODE: _{}_", decode);
-
-    std::string target;
-    target.resize(source.length());
 
     const auto plaintext_alphabet = parser.get<std::string>("--plaintext-alphabet");
     if (debug)
