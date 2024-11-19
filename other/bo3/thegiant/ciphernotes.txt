@@ -1,0 +1,48 @@
+kCmlgFi6GuJNgkNI1Q41fbfyLoCFTCvlqkZiI0KIAXAzP1U1uy1BE4U
+fPBfpKmmLObjYnQNRBaPtKiVWzc5A4v0w3xIe8FOhAGJZ7g4in0wn
+dJxMOvO3dc1M82at2T6935roTqyWDgtGD/hwwRF3oHqFM5Vcw1
+JtINbsgWRm4o4/quEDkZ7x1B275bX3/Fo1
+
+Transposition on Base64 alphabet using TheGiant as key:
+
+Base:   ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/
+Column: BEDAFCGHJMLINKOPRUTQVSWXZcbYdaefhkjglimupsrotquvxozw1y23587496+/
+Row:    IJKLMNOPghijklmnYZabcdefABCDEFGHopqrstuvQRSTUVWXwxyz0123456789+/
+
+kCmlgFi6GuJNgkNI1Q41fbfyLoCFTCvlqk ZiI0KIAXAzP1U1uy 1BE 4U      55
+fPBfpKmmLObjYnQNRBaPtKiVWzc5A4v0w3 xIe8FOhAGJZ7g4in 0wn         53
+dJxMOvO3dc1M82at2T6935roTqyWDgtGD/ hwwRF3oHqFM5Vcw1             50
+JtINbsgWRm4o4/quEDkZ7x1B275bX3/Fo1                              34
+
+55 53 50 34
+5553 5304
+
+Decimal to ascii:   752"
+Hex to ascii:       USP4
+
+
+kCmlgFi6GuJNgkNI1Q41fbfyLoCFTCvlqk ZiI0KIAXAzP1U1uy 1BE 4U      55
+fPBfpKmmLObjYnQNRBaPtKiVWzc5A4v0w3 xIe8FOhAGJZ7g4in 0wn         53
+dJxMOvO3dc1M82at2T6935roTqyWDgtGD/ hwwRF3oHqFM5Vcw1             50
+                                   JtINbsgWRm4o4Fo1
+                                   quEDkZ7x1B275bX3
+
+kCmlgFi6GuJNgkNI ZiI0KIAXAzP1U1uy 1BE 4U      55
+1Q41fbfyLoCFTCvl xIe8FOhAGJZ7g4in 0wn         53
+qkfPBfpKmmLObjYn hwwRF3oHqFM5Vcw1             50
+QNRBaPtKiVWzc5A4 JtINbsgWRm4o4Fo1
+v0w3dJxMOvO3dc1M quEDkZ7x1B275bX3
+82at2T6935roTqyW DgtGD
+
+
+
+
+Cipher after vigenere (TheGiant)
+
+3jErCfJnZPnTC+01IxW7B1GfeJgL1cWS9F3oqOx1T4e5xP7iBTTHmS7
+Mii9vsAN4h8BeJq0+U7tzs88DG9XGaJbdKSmkef1OTnnfd6fP6VOt
+/jY5hQs9/2c5PX4zYthqKaJu1EZDWBLMlZIdDyj9KhRyfaziSP
+wabu5yCw4TLJWFMIrw36Z3XbdoM819hfPi
+
+
+
