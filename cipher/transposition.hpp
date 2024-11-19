@@ -30,11 +30,12 @@ constexpr static void column(const std::span<charT1, ex1> target,
             if (i * key.size() + i >= target.size())
                 break;
             const auto column_index = std::get<0>(sorted_keys[i]);
-            if constexpr (encode) {
-                target[row * key.size() + i] = source[row * key.size() + column_index];
-            } else {
-                target[row * key.size() + column_index] = source[row * key.size() + i];
-            }
+            const auto linear_index = row * key.size() + i;
+            const auto fixed_index = row * key.size() + column_index;
+            if constexpr (encode)
+                target[linear_index] = source[fixed_index];
+            else
+                target[fixed_index] = source[linear_index];
         }
     }
 }
