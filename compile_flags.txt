@@ -4,3 +4,4 @@
 -Wpedantic
 -Wconversion
 -I.
+-Iinclude
