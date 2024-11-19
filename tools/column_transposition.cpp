@@ -1,6 +1,5 @@
-
-#include <print>
 #include <iostream>
+#include <print>
 
 #include <argparse.hpp>
 
@@ -11,7 +10,7 @@
 int main(int argc, const char* argv[])
 {
     argparse::ArgumentParser parser("transposition");
-    
+
     parser.add_argument("-a", "--alphabet")
         .default_value(std::string(cipher::base64::DEFAULT_ALPHABET.begin(), cipher::base64::DEFAULT_ALPHABET.size()));
     parser.add_argument("-d", "--decode").flag().default_value(false);
@@ -54,18 +53,18 @@ int main(int argc, const char* argv[])
     if (debug)
         std::println(stderr, "KEY: _{}_", key);
 
-    const auto source_ascii_to_index = cipher::alphabet::create_ascii_to_index_array(std::span{ alphabet });
+    const auto ascii_to_index = cipher::alphabet::create_ascii_to_index_array(std::span{ alphabet });
 
     if (decode) {
         cipher::transposition::column<false>(std::span{ target },
                                              std::span{ source },
                                              std::span{ key },
-                                             source_ascii_to_index); 
+                                             ascii_to_index); 
     } else {
         cipher::transposition::column<true>(std::span{ target },
                                             std::span{ source },
                                             std::span{ key },
-                                            source_ascii_to_index); 
+                                            ascii_to_index); 
     }
 
     std::println("{}", target);
